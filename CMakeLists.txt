@@ -9,15 +9,21 @@ find_package(cpr CONFIG REQUIRED)
 pkg_check_modules(GTKMM REQUIRED IMPORTED_TARGET gtkmm-4.0)
 pkg_check_modules(GUMBO REQUIRED IMPORTED_TARGET gumbo)
 
-add_library(CapaDatos STATIC datos/Ficheros.cpp)
+add_library(CapaDatos STATIC datos/Fichero.cpp)
 target_include_directories(CapaDatos PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
 
 add_library(CapaNegocios STATIC 
     negocios/Peticion.cpp 
     negocios/Cola.cpp
 )
+
+target_compile_definitions(CapaDatos PRIVATE 
+    RUTA_DATOS="${CMAKE_CURRENT_SOURCE_DIR}/datos"
+)
 target_include_directories(CapaNegocios PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
-target_link_libraries(CapaNegocios PRIVATE cpr::cpr PkgConfig::GUMBO)
+target_link_libraries(CapaNegocios 
+    PRIVATE cpr::cpr PkgConfig::GUMBO
+    PUBLIC CapaDatos)
 add_definitions(-D_HAS_STD_BYTE=0)
 add_library(CapaInterfaz STATIC presentacion/Interfaz.cpp)
 target_include_directories(CapaInterfaz PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
