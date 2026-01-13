@@ -3,6 +3,7 @@
 #include <gumbo.h>
 #include <string>
 #include "datos/Fichero.h"
+#include <iostream>
 
 using std::string;
 using std::endl;
@@ -31,7 +32,7 @@ string Peticion::realizarPeticion(string url) {
         return "NO SE PERMITE EL ACCESO A LA PAGINA";
 
     string html = static_cast<string>(r.text);
-    urlSolicitada = html;
+    urlSolicitada = url;
     parsearHtml(html);
     return "SE ACCEDIO CORRECTAMENTE A LA URL: "+url;
 }
@@ -59,5 +60,10 @@ void Peticion::extraerEtiquetas(GumboNode* nodo){
 }
 
 void Peticion::guardarInformacion(void){
-
+    gestorFicheros.setPadre(urlSolicitada);
+    int elementos = colaPrioridad.getLongitud();
+    std::cout<<elementos<<endl;
+    gestorFicheros.setContador(elementos);
+    if (gestorFicheros.guardarPadre() && gestorFicheros.guardarContador())
+        std::cout<<"bien"<<endl;
 }

@@ -18,7 +18,7 @@ int main(int argc, char* argv[]) {
 
 
 
-
+    peticion.guardarInformacion();
     peticion.destructor();
     return 0;
 }

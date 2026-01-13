@@ -13,7 +13,7 @@ class Fichero{
     public:
         Fichero(void);
         int getContador(void);
-        void setContador(int url);
+        void setContador(int cont);
         string getPadre(void);
         void setPadre(string padre);
         bool leerContador(void);

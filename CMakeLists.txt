@@ -18,7 +18,7 @@ add_library(CapaNegocios STATIC
 )
 
 target_compile_definitions(CapaDatos PRIVATE 
-    RUTA_DATOS="${CMAKE_CURRENT_SOURCE_DIR}/datos"
+    RUTA_DATOS="${CMAKE_CURRENT_SOURCE_DIR}/datos/"
 )
 target_include_directories(CapaNegocios PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
 target_link_libraries(CapaNegocios 
