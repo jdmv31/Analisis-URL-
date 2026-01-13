@@ -1,0 +1,42 @@
+/* Ventana principal */
+window {
+    background-color: #3566b0;
+}
+
+/* Tarjeta contenedora */
+.card {
+    background-color: #ffffff;
+    border-radius: 12px;
+    border: 1px solid #dcdde1;
+    padding: 40px;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+/* Título principal */
+.header {
+    font-size: 32px;
+    font-weight: 800;
+    color: #2f3640;
+    margin-bottom: 5px;
+}
+
+/* Subtítulo */
+.subtitle {
+    font-size: 14px;
+    color: #718093;
+    margin-bottom: 20px;
+}
+
+/* Botón estilizado */
+.btn-primary {
+    background-image: linear-gradient(to bottom, #448aff, #2979ff);
+    color: white;
+    border-radius: 6px;
+    padding: 12px 24px;
+    font-weight: bold;
+    border: none;
+}
+
+.btn-primary:hover {
+    background-image: linear-gradient(to bottom, #2979ff, #1c73ff);
+}
