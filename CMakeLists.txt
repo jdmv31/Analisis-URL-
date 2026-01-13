@@ -12,7 +12,10 @@ pkg_check_modules(GUMBO REQUIRED IMPORTED_TARGET gumbo)
 add_library(CapaDatos STATIC datos/Ficheros.cpp)
 target_include_directories(CapaDatos PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
 
-add_library(CapaNegocios STATIC negocios/Peticion.cpp)
+add_library(CapaNegocios STATIC 
+    negocios/Peticion.cpp 
+    negocios/Cola.cpp
+)
 target_include_directories(CapaNegocios PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
 target_link_libraries(CapaNegocios PRIVATE cpr::cpr PkgConfig::GUMBO)
 add_definitions(-D_HAS_STD_BYTE=0)

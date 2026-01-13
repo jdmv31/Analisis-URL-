@@ -16,6 +16,9 @@ int main(int argc, char* argv[]) {
     Peticion peticion;
     cout<<peticion.realizarPeticion(paginaweb)<<endl;
 
-    //return app->make_window_and_run<MiVentana>(argc,argv);
+
+
+
+    peticion.destructor();
     return 0;
 }

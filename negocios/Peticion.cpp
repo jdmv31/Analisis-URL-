@@ -2,13 +2,17 @@
 #include <cpr/cpr.h>
 #include <gumbo.h>
 #include <string>
-#include <iostream>
 
 using std::string;
-using std::cout;
 using std::endl;
 
 Peticion::Peticion(void){
+    urlSolicitada = "";
+    // c++ automaticamente usa el constructor del objeto cola, no es necesario especificar
+}
+
+void Peticion::destructor(void){
+    colaPrioridad.destructor();
     urlSolicitada = "";
 }
 
@@ -42,9 +46,9 @@ void Peticion::extraerEtiquetas(GumboNode* nodo){
         return;
 
     GumboAttribute* href;
-    if (nodo->v.element.tag == GUMBO_TAG_A && 
-        (href = gumbo_get_attribute(&nodo->v.element.attributes,"href"))){
-            cout<<href->value<<endl;
+    if (nodo->v.element.tag == GUMBO_TAG_A && (href = gumbo_get_attribute(&nodo->v.element.attributes,"href"))){
+            if (!static_cast<string>(href->value).find("http") && colaPrioridad.getLongitud() < MAX_PAGINAS)
+                colaPrioridad.insertarUrl(static_cast<string>(href->value));
     }
     GumboVector* hijos = &nodo->v.element.children;
 
