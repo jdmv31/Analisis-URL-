@@ -1,7 +1,9 @@
 #include "Fichero.h"
+#include "PathConfig.h"
 #include <filesystem>
 #include <fstream>
 
+using std::string;
 namespace fs = std::filesystem;
 
 Fichero::Fichero(void){

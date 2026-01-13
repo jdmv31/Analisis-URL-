@@ -62,7 +62,6 @@ void Peticion::extraerEtiquetas(GumboNode* nodo){
 void Peticion::guardarInformacion(void){
     gestorFicheros.setPadre(urlSolicitada);
     int elementos = colaPrioridad.getLongitud();
-    std::cout<<elementos<<endl;
     gestorFicheros.setContador(elementos);
     if (gestorFicheros.guardarPadre() && gestorFicheros.guardarContador())
         std::cout<<"bien"<<endl;
