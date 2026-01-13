@@ -1,5 +1,5 @@
 #include <presentacion/Interfaz.h>
-#include <datos/Ficheros.cpp>
+#include <datos/Fichero.cpp>
 #include <negocios/Peticion.cpp>
 #include <iostream>
 #include <string>

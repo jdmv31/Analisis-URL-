@@ -2,6 +2,7 @@
 #include <cpr/cpr.h>
 #include <gumbo.h>
 #include <string>
+#include "datos/Fichero.h"
 
 using std::string;
 using std::endl;
@@ -55,4 +56,8 @@ void Peticion::extraerEtiquetas(GumboNode* nodo){
     for (int i =0; i < hijos->length;i++){
         extraerEtiquetas(static_cast<GumboNode*>(hijos->data[i]));
     }
+}
+
+void Peticion::guardarInformacion(void){
+
 }
