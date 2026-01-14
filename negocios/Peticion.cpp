@@ -47,10 +47,16 @@ void Peticion::extraerEtiquetas(GumboNode* nodo){
     if (nodo->type != GUMBO_NODE_ELEMENT)
         return;
 
+    int cantEtiquetas = 0;
+
     GumboAttribute* href;
     if (nodo->v.element.tag == GUMBO_TAG_A && (href = gumbo_get_attribute(&nodo->v.element.attributes,"href"))){
-            if (!static_cast<string>(href->value).find("http") && colaPrioridad.getLongitud() < MAX_PAGINAS)
+            if (!static_cast<string>(href->value).find("http") && colaPrioridad.getLongitud() < MAX_PAGINAS){
+                // aca las etiquetas
+                int etiquetas = obtenerEtiquetasTexto(nodo);
                 colaPrioridad.insertarUrl(static_cast<string>(href->value));
+                std::cout<<"etiquetas de texto: "<< etiquetas<<std::endl;
+            }
     }
     GumboVector* hijos = &nodo->v.element.children;
 
@@ -60,16 +66,29 @@ void Peticion::extraerEtiquetas(GumboNode* nodo){
 }
 
 
-int Peticion::obtenerEtiquetasTexto(string html){
-    int cantEtiquetas;
+int Peticion::obtenerEtiquetasTexto(GumboNode* nodo){
+    if (nodo->type != GUMBO_NODE_ELEMENT)
+        return 0;
 
-    return cantEtiquetas;
+    int cuentaActual = 0;
+    if (nodo->v.element.tag == GUMBO_TAG_P || nodo->v.element.tag == GUMBO_TAG_H1
+        || nodo->v.element.tag == GUMBO_TAG_H2 || nodo->v.element.tag == GUMBO_TAG_H3
+        || nodo->v.element.tag == GUMBO_TAG_H4 || nodo->v.element.tag == GUMBO_TAG_H5
+        || nodo->v.element.tag == GUMBO_TAG_H6) 
+        cuentaActual = 1;
+
+    GumboVector* hijos = &nodo->v.element.children;
+    int sumaHijos = 0;
+    
+    for (int i = 0; i < hijos->length; i++){
+        sumaHijos += obtenerEtiquetasTexto(static_cast<GumboNode*>(hijos->data[i]));
+    }
+
+    return cuentaActual + sumaHijos;
 }
 
 void Peticion::guardarInformacion(void){
     gestorFicheros.setPadre(urlSolicitada);
     int elementos = colaPrioridad.getLongitud();
     gestorFicheros.setContador(elementos);
-    if (gestorFicheros.guardarPadre() && gestorFicheros.guardarContador())
-        std::cout<<"bien"<<endl;
 }

@@ -19,5 +19,5 @@ class Peticion{
         void parsearHtml (string html);
         void extraerEtiquetas(GumboNode* nodo);
         void guardarInformacion(void);
-        int obtenerEtiquetasTexto(string html);
+        int obtenerEtiquetasTexto(GumboNode* nodo);
 };
