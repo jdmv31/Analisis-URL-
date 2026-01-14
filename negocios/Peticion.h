@@ -15,8 +15,9 @@ class Peticion{
     public:
         Peticion(void);
         void destructor(void);
-        string realizarPeticion(string url);
+        int realizarPeticion(string url);
         void parsearHtml (string html);
         void extraerEtiquetas(GumboNode* nodo);
         void guardarInformacion(void);
+        int obtenerEtiquetasTexto(string html);
 };

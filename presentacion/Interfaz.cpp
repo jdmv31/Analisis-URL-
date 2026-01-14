@@ -1,9 +1,6 @@
 #include "Interfaz.h"
 #include <iostream>
 
-
-
-// --- CSS MODERNO INCRUSTADO ---
 const std::string ESTILO_CSS = R"(
     window {
         background-color: #052E70;
@@ -76,7 +73,7 @@ const std::string ESTILO_CSS = R"(
     }
 )";
 
-MiVentana::MiVentana()
+Interfaz::Interfaz()
     : m_caja_principal(Gtk::Orientation::VERTICAL, 15),
       m_caja_radios(Gtk::Orientation::HORIZONTAL, 20),
       m_radio1("Profundidad Máxima"),
@@ -153,12 +150,12 @@ MiVentana::MiVentana()
 
     // 5. Conectar Señales
     m_boton_accion.signal_clicked().connect(
-        sigc::mem_fun(*this, &MiVentana::on_boton_nueva_ventana_click)
+        sigc::mem_fun(*this, &Interfaz::on_boton_nueva_ventana_click)
     );
 
     // Conectar botón de salir
     m_boton_salir.signal_clicked().connect(
-        sigc::mem_fun(*this, &MiVentana::on_boton_salir_click)
+        sigc::mem_fun(*this, &Interfaz::on_boton_salir_click)
     );
 
     // Configuración ventana secundaria
@@ -177,13 +174,11 @@ MiVentana::MiVentana()
     m_segunda_ventana.set_child(m_caja_segunda);
 }
 
-MiVentana::~MiVentana() {
-    // Aquí puedes limpiar recursos manuales si tuvieras punteros crudos.
-    // Al usar miembros de clase GTKmm, la memoria se libera automáticamente.
-    std::cout << "Liberando memoria y cerrando aplicación." << std::endl;
+Interfaz::~Interfaz() {
+    peticion.destructor();
 }
 
-void MiVentana::cargar_css() {
+void Interfaz::cargar_css() {
     auto css_provider = Gtk::CssProvider::create();
     try {
         css_provider->load_from_data(ESTILO_CSS);
@@ -197,25 +192,38 @@ void MiVentana::cargar_css() {
     }
 }
 
-void MiVentana::on_boton_nueva_ventana_click() {
-    std::cout << "Abriendo segunda ventana..." << std::endl;
-    std::string url = m_entry_url.get_text();
-    
-    if(!url.empty()) {
-        m_lbl_segunda_ventana.set_text("Procesando: " + url);
-    } else {
-        m_lbl_segunda_ventana.set_text("Sin URL definida");
-    }
-
-    m_segunda_ventana.set_visible(true);
+void Interfaz::errorOcurrido(std::string mensaje){
+    auto ventanaEmergente = Gtk::AlertDialog::create(static_cast<Glib::ustring>(mensaje));
+    ventanaEmergente->set_detail("Error en la ejecucion del programa.");
+    ventanaEmergente->show(*this);
 }
 
-// Lógica para cerrar todo y liberar memoria
-void MiVentana::on_boton_salir_click() {
-    // Si la ventana secundaria está abierta, la cerramos primero
+void Interfaz::on_boton_nueva_ventana_click() {
+    std::string url = m_entry_url.get_text();
+    // esto es lo que enlaza la interfaz con la logica nicole :)
+    if(url.empty()){
+        errorOcurrido("No se ingreso ninguna URL, por favor intente nuevamente.");
+        return;
+    }
+
+    if (peticion.realizarPeticion(url) == 0){
+        errorOcurrido("El dominio ingresado es inexistente, por favor intente nuevamente.");
+        return;
+    }
+
+    if (peticion.realizarPeticion(url) == 400){
+        errorOcurrido("Error HTTP en el acceso al dominio, por favor ingrese otra URL.");
+        return;
+    }
+
+    if (peticion.realizarPeticion(url) == 200){
+        peticion.guardarInformacion();
+        m_segunda_ventana.set_visible(true);
+    }
+
+}
+
+void Interfaz::on_boton_salir_click() {
     m_segunda_ventana.set_visible(false); 
-    
-    // Cerramos la ventana principal. 
-    // Esto rompe el bucle principal de GTK y llama al destructor ~MiVentana()
     close(); 
 }

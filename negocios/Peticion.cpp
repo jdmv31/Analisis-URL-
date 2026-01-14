@@ -18,23 +18,23 @@ void Peticion::destructor(void){
     urlSolicitada = "";
 }
 
-string Peticion::realizarPeticion(string url) {
+int Peticion::realizarPeticion(string url) {
     auto r = cpr::Get(
         cpr::Url{static_cast<string_view>(url)},
         cpr::Authentication{"user", "pass", cpr::AuthMode::BASIC},
         cpr::Parameters{{"anon", "true"}, {"key", "value"}}
     );
 
-    if (r.status_code == 404)
-        return "PAGINA INEXISTENTE";
+    if (r.status_code == 0)
+        return 0;
 
-    if (r.status_code == 403)
-        return "NO SE PERMITE EL ACCESO A LA PAGINA";
+    if (r.status_code >= 400)
+        return 400;
 
     string html = static_cast<string>(r.text);
     urlSolicitada = url;
     parsearHtml(html);
-    return "SE ACCEDIO CORRECTAMENTE A LA URL: "+url;
+    return 200;
 }
 
 void Peticion::parsearHtml (string html){
@@ -57,6 +57,13 @@ void Peticion::extraerEtiquetas(GumboNode* nodo){
     for (int i =0; i < hijos->length;i++){
         extraerEtiquetas(static_cast<GumboNode*>(hijos->data[i]));
     }
+}
+
+
+int Peticion::obtenerEtiquetasTexto(string html){
+    int cantEtiquetas;
+
+    return cantEtiquetas;
 }
 
 void Peticion::guardarInformacion(void){
