@@ -175,7 +175,7 @@ Interfaz::Interfaz()
 }
 
 Interfaz::~Interfaz() {
-    peticion.destructor();
+    // asd
 }
 
 void Interfaz::cargar_css() {

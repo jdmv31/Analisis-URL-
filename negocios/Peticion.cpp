@@ -4,18 +4,17 @@
 #include <string>
 #include "datos/Fichero.h"
 #include <iostream>
+#include <vector>
+#include <future>
 
 using std::string;
 using std::endl;
+using std::vector;
 
-Peticion::Peticion(void){
+
+Peticion::Peticion(){
     urlSolicitada = "";
     // c++ automaticamente usa el constructor del objeto cola, no es necesario especificar
-}
-
-void Peticion::destructor(void){
-    colaPrioridad.destructor();
-    urlSolicitada = "";
 }
 
 int Peticion::realizarPeticion(string url) {
@@ -39,11 +38,33 @@ int Peticion::realizarPeticion(string url) {
 
 void Peticion::parsearHtml (string html){
     GumboOutput* salida = gumbo_parse(html.c_str());
-    extraerEtiquetas(salida->root);
+    vector<string> urlsRecolectadas;
+    extraerEtiquetas(salida->root,urlsRecolectadas);
+    procesarLinks(urlsRecolectadas);
     gumbo_destroy_output(&kGumboDefaultOptions, salida);
 }
 
-void Peticion::extraerEtiquetas(GumboNode* nodo){
+void Peticion::procesarLinks(vector<string> urlsRecolectadas){
+    vector<cpr::AsyncResponse> links;
+    links.reserve(urlsRecolectadas.size());
+    for (string url : urlsRecolectadas){
+        links.push_back(cpr::GetAsync(cpr::Url{url})); 
+    }
+    for (int i = 0; i < links.size(); i++) {
+        cpr::Response r = links[i].get();
+        if (r.status_code == 200) {
+            GumboOutput* output = gumbo_parse(r.text.c_str());
+            int cantidad = obtenerEtiquetasTexto(output->root);
+            colaPrioridad.insertarUrl(urlsRecolectadas[i], cantidad);
+            gumbo_destroy_output(&kGumboDefaultOptions, output);
+        }
+    }
+
+}
+
+void Peticion::extraerEtiquetas(GumboNode* nodo,vector<string>& urlsRecolectadas){
+    if (urlsRecolectadas.size() >= MAX_PAGINAS)
+        return;
     if (nodo->type != GUMBO_NODE_ELEMENT)
         return;
 
@@ -51,17 +72,15 @@ void Peticion::extraerEtiquetas(GumboNode* nodo){
 
     GumboAttribute* href;
     if (nodo->v.element.tag == GUMBO_TAG_A && (href = gumbo_get_attribute(&nodo->v.element.attributes,"href"))){
-            if (!static_cast<string>(href->value).find("http") && colaPrioridad.getLongitud() < MAX_PAGINAS){
-                // aca las etiquetas
-                int etiquetas = obtenerEtiquetasTexto(nodo);
-                colaPrioridad.insertarUrl(static_cast<string>(href->value));
-                std::cout<<"etiquetas de texto: "<< etiquetas<<std::endl;
-            }
+            if (!static_cast<string>(href->value).find("http") && colaPrioridad.getLongitud() < MAX_PAGINAS)
+                urlsRecolectadas.push_back(static_cast<string>(href->value));
     }
     GumboVector* hijos = &nodo->v.element.children;
 
     for (int i =0; i < hijos->length;i++){
-        extraerEtiquetas(static_cast<GumboNode*>(hijos->data[i]));
+        if (urlsRecolectadas.size() >= MAX_PAGINAS)
+            break;
+        extraerEtiquetas(static_cast<GumboNode*>(hijos->data[i]),urlsRecolectadas);
     }
 }
 
@@ -87,7 +106,7 @@ int Peticion::obtenerEtiquetasTexto(GumboNode* nodo){
     return cuentaActual + sumaHijos;
 }
 
-void Peticion::guardarInformacion(void){
+void Peticion::guardarInformacion(){
     gestorFicheros.setPadre(urlSolicitada);
     int elementos = colaPrioridad.getLongitud();
     gestorFicheros.setContador(elementos);

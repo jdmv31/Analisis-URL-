@@ -3,7 +3,9 @@
 #include <gumbo.h>
 #include <negocios/Cola.h>
 #include <datos/Fichero.h>
+#include <vector>
 
+using std::vector;
 using namespace std;
 
 class Peticion{
@@ -13,11 +15,11 @@ class Peticion{
         Cola colaPrioridad;
         Fichero gestorFicheros;
     public:
-        Peticion(void);
-        void destructor(void);
+        Peticion();
         int realizarPeticion(string url);
         void parsearHtml (string html);
-        void extraerEtiquetas(GumboNode* nodo);
-        void guardarInformacion(void);
+        void extraerEtiquetas(GumboNode* nodo,vector<string>& urlsRecolectadas);
+        void guardarInformacion();
         int obtenerEtiquetasTexto(GumboNode* nodo);
+        void procesarLinks(vector<string> urlsRecolectadas);
 };

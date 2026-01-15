@@ -3,38 +3,48 @@
 
 using std::string;
 
-Cola::Cola(void){
-    frente = actual = fin = nullptr;
+Cola::Cola(){
+    frente  = nullptr;
     longitud = 0;
 }
 
-void Cola::destructor(void){
+Cola::~Cola(){
     while (frente != nullptr){
-        actual = frente;
+        Nodo* actual = frente;
         frente = frente->siguiente;
         delete actual;
     }
-    actual = frente = fin = nullptr;
+    frente = nullptr;
     longitud = 0;
 }
 
-int Cola::getLongitud(void){
+int Cola::getLongitud(){
     return longitud;
 }
 
-void Cola::insertarUrl(string url){
+Nodo* Cola::crearNodo(string url, int prioridad){
     Nodo* nuevonodo;
     nuevonodo = new Nodo();
     nuevonodo->url = url;
+    nuevonodo->prioridad = prioridad;
     nuevonodo->siguiente = nullptr;
+    return nuevonodo;
+}
 
-    if (frente == nullptr){
+void Cola::insertarUrl(string url, int prioridad){
+    Nodo* nuevonodo = crearNodo(url,prioridad);
+
+    if (frente == nullptr || prioridad > frente->prioridad){
+        nuevonodo->siguiente = frente;
         frente = nuevonodo;
-        fin = nuevonodo;
     }
     else{
-        fin->siguiente = nuevonodo;
-        fin = nuevonodo;
+        Nodo* actual = frente;
+        while (actual != nullptr && actual->siguiente->prioridad >= prioridad){
+            actual = actual->siguiente;
+        }
+        nuevonodo->siguiente = actual->siguiente;
+        actual->siguiente = nuevonodo;
     }
 
     longitud++;

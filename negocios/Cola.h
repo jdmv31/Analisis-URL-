@@ -12,12 +12,11 @@ struct Nodo{
 class Cola{
     private:
         Nodo* frente;
-        Nodo* actual;
-        Nodo* fin;
         int longitud;
     public:
-        Cola(void);
-        void destructor(void);
-        int getLongitud(void);
-        void insertarUrl(string url);
+        Cola();
+        ~Cola(); // destructor de la clase
+        int getLongitud();
+        void insertarUrl(string url, int prioridad);
+        Nodo* crearNodo(string url, int prioridad);
 };
