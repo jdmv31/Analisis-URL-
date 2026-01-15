@@ -1,5 +1,6 @@
 #pragma once
 #include <string>
+#include <negocios/Cola.h>
 
 class Fichero{
     private:
@@ -7,12 +8,14 @@ class Fichero{
         std::string urlPadre;
     public:
         Fichero(void);
-        int getContador(void);
+        int getContador();
         void setContador(int cont);
-        std::string getPadre(void);
+        std::string getPadre();
         void setPadre(std::string padre);
-        bool leerContador(void);
-        bool guardarContador(void);
-        bool leerPadre(void);
-        bool guardarPadre(void);
+        bool leerContador();
+        bool guardarContador();
+        bool leerPadre();
+        bool guardarPadre();
+        bool guardarCola(Cola colaPrioridad);
+        bool leerCola(Cola colaPrioridad);
 };

@@ -1,5 +1,6 @@
 #include "negocios/Cola.h"
 #include <string>
+#include <iostream>
 
 using std::string;
 
@@ -40,9 +41,10 @@ void Cola::insertarUrl(string url, int prioridad){
     }
     else{
         Nodo* actual = frente;
-        while (actual != nullptr && actual->siguiente->prioridad >= prioridad){
+        while (actual->siguiente != nullptr && actual->siguiente->prioridad >= prioridad){
             actual = actual->siguiente;
         }
+        
         nuevonodo->siguiente = actual->siguiente;
         actual->siguiente = nuevonodo;
     }

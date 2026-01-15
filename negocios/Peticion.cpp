@@ -62,28 +62,33 @@ void Peticion::procesarLinks(vector<string> urlsRecolectadas){
 
 }
 
-void Peticion::extraerEtiquetas(GumboNode* nodo,vector<string>& urlsRecolectadas){
-    if (urlsRecolectadas.size() >= MAX_PAGINAS)
+void Peticion::extraerEtiquetas(GumboNode* nodo, vector<string>& urlsRecolectadas){
+    int totalGlobal = colaPrioridad.getLongitud() + urlsRecolectadas.size();
+
+    if (totalGlobal >= MAX_PAGINAS)
         return;
+
     if (nodo->type != GUMBO_NODE_ELEMENT)
         return;
 
-    int cantEtiquetas = 0;
-
     GumboAttribute* href;
     if (nodo->v.element.tag == GUMBO_TAG_A && (href = gumbo_get_attribute(&nodo->v.element.attributes,"href"))){
-            if (!static_cast<string>(href->value).find("http") && colaPrioridad.getLongitud() < MAX_PAGINAS)
-                urlsRecolectadas.push_back(static_cast<string>(href->value));
+        if (colaPrioridad.getLongitud() + urlsRecolectadas.size() < MAX_PAGINAS) {
+             string url = static_cast<string>(href->value);
+             if (url.find("http") == 0)
+                 urlsRecolectadas.push_back(url);
+             
+        }
     }
-    GumboVector* hijos = &nodo->v.element.children;
 
-    for (int i =0; i < hijos->length;i++){
-        if (urlsRecolectadas.size() >= MAX_PAGINAS)
+    GumboVector* hijos = &nodo->v.element.children;
+    for (int i = 0; i < hijos->length; i++){
+        if (colaPrioridad.getLongitud() + urlsRecolectadas.size() >= MAX_PAGINAS)
             break;
-        extraerEtiquetas(static_cast<GumboNode*>(hijos->data[i]),urlsRecolectadas);
+            
+        extraerEtiquetas(static_cast<GumboNode*>(hijos->data[i]), urlsRecolectadas);
     }
 }
-
 
 int Peticion::obtenerEtiquetasTexto(GumboNode* nodo){
     if (nodo->type != GUMBO_NODE_ELEMENT)
@@ -110,4 +115,6 @@ void Peticion::guardarInformacion(){
     gestorFicheros.setPadre(urlSolicitada);
     int elementos = colaPrioridad.getLongitud();
     gestorFicheros.setContador(elementos);
+    if (gestorFicheros.guardarPadre() && gestorFicheros.guardarContador())
+        std::cout<<"bien"<<endl;
 }

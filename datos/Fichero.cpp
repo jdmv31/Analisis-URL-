@@ -2,16 +2,17 @@
 #include "PathConfig.h"
 #include <filesystem>
 #include <fstream>
+#include <negocios/Cola.h>
 
 using std::string;
 namespace fs = std::filesystem;
 
-Fichero::Fichero(void){
+Fichero::Fichero(){
     urlPadre = "";
     contadorUrl = 0;
 }
 
-int Fichero::getContador(void){
+int Fichero::getContador(){
     return contadorUrl;
 }
 
@@ -23,11 +24,11 @@ void Fichero::setPadre(string padre){
     urlPadre = padre;
 }
 
-string Fichero::getPadre(void){
+string Fichero::getPadre(){
     return urlPadre;
 }
 
-bool Fichero::leerContador(void){
+bool Fichero::leerContador(){
     int num = 0;
     fs::path rutaBase(RUTA_DATOS);
     fs::path carpeta = rutaBase / "contadorUrl";
@@ -45,7 +46,7 @@ bool Fichero::leerContador(void){
         return false;
 }
 
-bool Fichero::guardarContador(void){
+bool Fichero::guardarContador(){
     int num = 0;
     fs::path rutaBase (RUTA_DATOS);
     fs::path carpeta = rutaBase / "contadorUrl";
@@ -63,7 +64,7 @@ bool Fichero::guardarContador(void){
         return false;
 }
 
-bool Fichero::leerPadre(void){
+bool Fichero::leerPadre(){
     string padre = "";
     fs::path rutaBase(RUTA_DATOS);
     fs::path carpeta = rutaBase / "urlPadre";
@@ -82,7 +83,7 @@ bool Fichero::leerPadre(void){
         return false;    
 }
 
-bool Fichero::guardarPadre(void){
+bool Fichero::guardarPadre(){
     string padre = "";
     fs::path rutaBase(RUTA_DATOS);
     fs::path carpeta = rutaBase / "urlPadre";
@@ -99,4 +100,39 @@ bool Fichero::guardarPadre(void){
     }
     else
         return false;
+}
+
+bool Fichero::guardarCola(Cola colaPrioridad){
+    /*
+    fs::path rutaBase(RUTA_DATOS); 
+    fs::path rutaCarpeta = rutaBase / "urlsAlmacenadas";
+    if (!fs::exists(rutaCarpeta))
+        fs::create_directories(rutaCarpeta);
+
+
+    fs::path rutaArchivo = rutaCarpeta / ("colaAlmacenada.bin");
+    std::ofstream archivo(rutaArchivo,std::ios::binary | std::ios::trunc);
+    
+    if (!archivo.is_open()) return false;
+
+    Nodo* actual = colaPrioridad->frente;
+    
+    while (actual != nullptr) {
+        int tamanoUrl = actual->url.size();
+        archivo.write(reinterpret_cast<char*>(&tamanoUrl), sizeof(int));
+        archivo.write(actual->url.c_str(), tamanoUrl);
+        archivo.write(reinterpret_cast<char*>(&actual->prioridad), sizeof(int));
+        actual = actual->siguiente;
+    }
+
+    archivo.close();
+    return true;
+    */
+   return true;
+}
+
+
+bool Fichero::leerCola(Cola colaPrioridad){
+    return true;
+
 }
