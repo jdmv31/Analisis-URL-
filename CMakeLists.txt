@@ -44,7 +44,7 @@ add_definitions(-D_HAS_STD_BYTE=0)
 add_library(CapaInterfaz STATIC presentacion/Interfaz.cpp)
 target_include_directories(CapaInterfaz PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
 target_link_libraries(CapaInterfaz PRIVATE PkgConfig::GTKMM)
-add_executable(WebCrawler main.cpp)
+add_executable(WebCrawler main.cpp recursos.rc)
 
 
 target_link_libraries(WebCrawler PRIVATE 
