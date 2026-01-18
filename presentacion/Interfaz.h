@@ -1,44 +1,61 @@
+
+
 #pragma once
 #include <gtkmm.h>
 #include <string>
 #include <negocios/Peticion.h>
 
+
+class VentanaSecundaria : public Gtk::Box {
+public:
+    VentanaSecundaria(const std::string& titulo, Gtk::Notebook& notebook);
+    Peticion peticion;
+
+protected:
+    void on_volver_clicked();
+    void on_analizar_clicked(); // Slot para el botón analizar
+    void errorOcurrido(const std::string& mensaje); // Declarar aquí
+
+    // Referencia al notebook
+    Gtk::Notebook& m_notebook;
+
+    // Contenedores de diseño
+    Gtk::CenterBox m_CenterBox; // Para centrar la tarjeta
+    Gtk::Box m_CardBox;         // La tarjeta violeta (contenedor del formulario)
+    Gtk::Box m_RadioBox;        // Contenedor horizontal para los radios
+
+    // Widgets del formulario
+    Gtk::Label m_LblTitulo;
+    
+    Gtk::Label m_LblInstruccion;
+    Gtk::Entry m_EntryUrl;
+    
+    Gtk::CheckButton m_RadioProfundidad;
+    Gtk::CheckButton m_RadioPaginas;
+    
+    Gtk::Button m_BtnAnalizar;
+    Gtk::Button m_BtnVolver;
+};
+
+
 class Interfaz : public Gtk::Window {
-    public:
-        Gtk::ScrolledWindow m_scrolled_window; // <--- NUEVO CONTENEDOR
-        Gtk::Box m_caja_principal;
-        
-        // Títulos y Textos
-        Gtk::Label m_titulo_principal;
-        Gtk::Label m_lbl_mensaje;
-        Gtk::Label m_lbl_url;
-        
-        // Entradas
-        Gtk::Entry m_entry_url;
+public:
+    Interfaz();
 
-        // Radio Botones
-        Gtk::Box m_caja_radios;
-        Gtk::CheckButton m_radio1;
-        Gtk::CheckButton m_radio2;
+protected:
+    void on_salir_clicked();
 
-        // Botones
-        Gtk::Button m_boton_accion;
-        Gtk::Button m_boton_salir; // <--- NUEVO BOTÓN
+    // Gestor de pestañas
+    Gtk::Notebook m_Notebook;
 
-        // Ventana Secundaria (Modal)
-        Gtk::Window m_segunda_ventana;
-        Gtk::Box m_caja_segunda;
-        Gtk::Label m_lbl_segunda_ventana;
-        Peticion peticion;
-
-    public:
-        Interfaz();
-        virtual ~Interfaz();
-
-    protected:
-        void on_boton_nueva_ventana_click();
-        void on_boton_salir_click();
-        void cargar_css();
-        void errorOcurrido(std::string mensaje);
+    // --- Pestaña Inicio ---
+    Gtk::CenterBox m_CenterBoxInicio;
+    Gtk::Box m_MenuContainer;
+    Gtk::Label m_titulo_principal;
+    Gtk::Button m_Btn1;
+    Gtk::Button m_Btn2;
+    Gtk::Button m_Btn3;
+    Gtk::Button m_Btn4;
+    Gtk::Button m_BtnSalir;
 };
 
