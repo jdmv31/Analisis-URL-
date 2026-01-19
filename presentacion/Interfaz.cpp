@@ -2,145 +2,212 @@
 #include <iostream>
 
 // =========================================================
-// IMPLEMENTACIÓN VISTA SECUNDARIA
+// 1. IMPLEMENTACIÓN VISTA RECOPILACIÓN (COMPLETA)
 // =========================================================
-
-VentanaSecundaria::VentanaSecundaria(const std::string& titulo, Gtk::Notebook& notebook) 
-    : Gtk::Box(Gtk::Orientation::VERTICAL), 
-      m_notebook(notebook) 
+VistaRecopilacion::VistaRecopilacion(Gtk::Notebook& notebook) 
+    : Gtk::Box(Gtk::Orientation::VERTICAL), m_notebook(notebook) 
 {
-    // 1. Configuración de la tarjeta contenedora (Estilo menu-card)
-    m_CardBox.add_css_class("menu-card"); // Usamos el mismo estilo violeta
+    // Configuración Base de la Tarjeta
+    m_CardBox.add_css_class("menu-card");
     m_CardBox.set_orientation(Gtk::Orientation::VERTICAL);
     m_CardBox.set_spacing(15);
     m_CardBox.set_margin(50);
     m_CardBox.set_valign(Gtk::Align::CENTER);
     m_CardBox.set_halign(Gtk::Align::CENTER);
 
-    // 2. Título de la sección
-    m_LblTitulo.set_text(titulo);
+    // Título y Entrada
+    m_LblTitulo.set_text("Recopilación de Links");
     m_LblTitulo.add_css_class("titulo-label");
-    
-    // 3. Campo de URL
-    m_LblInstruccion.set_text("Introduce la URL objetivo:");
-    // Hacemos que el texto se vea bien (negrita)
+
+    m_LblInstruccion.set_markup("<span size='x-large' weight='bold'>Introduce la URL semilla:</span>");
     m_LblInstruccion.add_css_class("texto-instruccion");
-    m_LblInstruccion.set_markup("<b>Introduce la URL objetivo:</b>");
-    
-    m_EntryUrl.set_placeholder_text("https://ejemplo.com");
-    m_EntryUrl.set_margin_bottom(10);
+
+    m_EntryUrl.set_placeholder_text("https://sitio-a-recopilar.com");
     m_EntryUrl.add_css_class("entry-url");
-    // Opcional: Si quieres que la caja sea muy ancha, fuerza el tamaño:
     m_EntryUrl.set_size_request(400, -1);
 
-    // 4. Radio Buttons (Opciones de límite)
+    // --- RADIOS (Solo aquí) ---
     m_RadioProfundidad.set_label("Límite por Profundidad");
     m_RadioPaginas.set_label("Límite por Máx. Páginas");
-    
-    // Agruparlos (En GTK4 se usa set_group en el segundo radio)
-    m_RadioPaginas.set_group(m_RadioProfundidad);
-    m_RadioProfundidad.set_active(true); // Seleccionar el primero por defecto
+    m_RadioPaginas.set_group(m_RadioProfundidad); // Agrupar
+    m_RadioProfundidad.set_active(true);
 
-    // Contenedor para los radios (para que estén uno al lado del otro o vertical)
     m_RadioBox.set_orientation(Gtk::Orientation::VERTICAL);
     m_RadioBox.set_spacing(5);
-    m_RadioBox.set_margin_bottom(15);
     m_RadioBox.append(m_RadioProfundidad);
     m_RadioBox.append(m_RadioPaginas);
 
-    // 5. Botones de Acción
-    m_BtnAnalizar.set_label("Analizar Sitio");
-    // El CSS .menu-card button hará que se vea grande y cambie a rojo al pasar el mouse
-    
+    // Botones
+    m_BtnAnalizar.set_label("Comenzar Recopilación");
     m_BtnVolver.set_label("Volver al Menú");
-    m_BtnVolver.add_css_class("btn-salir"); // Usamos el estilo verde del botón salir
+    m_BtnVolver.add_css_class("btn-salir");
 
-    // 6. Ensamblaje de la tarjeta
+    // Armado
     m_CardBox.append(m_LblTitulo);
     m_CardBox.append(m_LblInstruccion);
     m_CardBox.append(m_EntryUrl);
-    m_CardBox.append(m_RadioBox);
+    m_CardBox.append(m_RadioBox); // Agregamos radios
     m_CardBox.append(m_BtnAnalizar);
     m_CardBox.append(m_BtnVolver);
 
-    // 7. Centrar la tarjeta en la vista
     m_CenterBox.set_center_widget(m_CardBox);
     append(m_CenterBox);
 
-    // 8. Conexión de Señales
-    m_BtnVolver.signal_clicked().connect(sigc::mem_fun(*this, &VentanaSecundaria::on_volver_clicked));
-    m_BtnAnalizar.signal_clicked().connect(sigc::mem_fun(*this, &VentanaSecundaria::on_analizar_clicked));
+    // Señales
+    m_BtnVolver.signal_clicked().connect(sigc::mem_fun(*this, &VistaRecopilacion::on_volver_clicked));
+    m_BtnAnalizar.signal_clicked().connect(sigc::mem_fun(*this, &VistaRecopilacion::on_analizar_clicked));
 }
 
-void VentanaSecundaria::on_volver_clicked() {
-    // Regresar al índice 0 (Menú Principal)
-    m_notebook.set_current_page(0);
-}
 
-// CORRECCIÓN: Asegúrate de que el nombre de la clase esté antes del método
-void VentanaSecundaria::errorOcurrido(const std::string& mensaje) {
-    // En GTK4 el constructor de MessageDialog es un poco diferente
-    auto dialog = new Gtk::MessageDialog(mensaje, false, Gtk::MessageType::ERROR, Gtk::ButtonsType::OK, true);
-    
-    // IMPORTANTE: Obtener la ventana raíz para que el diálogo sea modal
-    auto toplevel = dynamic_cast<Gtk::Window*>(this->get_root());
-    if (toplevel) {
-        dialog->set_transient_for(*toplevel);
-    }
 
-    dialog->signal_response().connect([dialog](int response_id) {
-        delete dialog; // Limpieza de memoria
-    });
-    
-    dialog->show();
-}
+void VistaRecopilacion::on_volver_clicked() { m_notebook.set_current_page(0); }
+void VistaRecopilacion::on_analizar_clicked() { std::cout << "Recopilando..." << std::endl; }
 
-// CORRECCIÓN: Solo una versión de este método
-void VentanaSecundaria::on_analizar_clicked() {
-    std::string url = m_EntryUrl.get_text();
-    
-    // 1. Validación de campo vacío
-    if(url.empty()){
-        errorOcurrido("No se ingresó ninguna URL, por favor intente nuevamente.");
-        return;
-    }
 
-    // 2. Lógica de Petición
-    // Nota: 'peticion' debe estar declarada en Interfaz.h dentro de VentanaSecundaria
-    int resultado = peticion.realizarPeticion(url);
-
-    if (resultado == 0){
-        errorOcurrido("El dominio ingresado es inexistente, por favor intente nuevamente.");
-        return;
-    }
-
-    if (resultado == 400){
-        errorOcurrido("Error HTTP en el acceso al dominio, por favor ingrese otra URL.");
-        return;
-    }
-
-    if (resultado == 200){
-        peticion.guardarInformacion();
-        
-        auto dialog = new Gtk::MessageDialog("Análisis completado con éxito", false, 
-                                            Gtk::MessageType::INFO, Gtk::ButtonsType::OK, true);
-        
-        auto toplevel = dynamic_cast<Gtk::Window*>(this->get_root());
-        if (toplevel) dialog->set_transient_for(*toplevel);
-
-        dialog->signal_response().connect([dialog](int id){ delete dialog; });
-        dialog->show();
-    }
-}
 // =========================================================
-// IMPLEMENTACIÓN VENTANA PRINCIPAL (INTERFAZ)
+// 2. IMPLEMENTACIÓN VISTA BÚSQUEDA (SIN RADIOS)
 // =========================================================
+VistaBusqueda::VistaBusqueda(Gtk::Notebook& notebook) 
+    : Gtk::Box(Gtk::Orientation::VERTICAL), m_notebook(notebook) 
+{
+    m_CardBox.add_css_class("menu-card");
+    m_CardBox.set_orientation(Gtk::Orientation::VERTICAL);
+    m_CardBox.set_spacing(15);
+    m_CardBox.set_margin(50);
+    m_CardBox.set_valign(Gtk::Align::CENTER);
+    m_CardBox.set_halign(Gtk::Align::CENTER);
 
+    m_LblTitulo.set_text("Buscar Palabra Clave");
+    m_LblTitulo.add_css_class("titulo-label");
+
+    // Texto diferente
+    m_LblInstruccion.set_markup("<span size='x-large' weight='bold'>Palabra a buscar:</span>");
+    m_LblInstruccion.add_css_class("texto-instruccion");
+
+    m_EntryKeyword.set_placeholder_text("Ej: Tecnología, Noticias...");
+    m_EntryKeyword.add_css_class("entry-url");
+    m_EntryKeyword.set_size_request(400, -1);
+
+    m_EntryUrl.set_placeholder_text("https://sitio-a-recopilar.com");
+    m_EntryUrl.add_css_class("entry-url");
+    m_EntryUrl.set_size_request(400, -1);
+
+    m_BtnBuscar.set_label("Buscar");
+    m_BtnVolver.set_label("Volver al Menú");
+    m_BtnVolver.add_css_class("btn-salir");
+
+    // Armado (SIN RADIOS)
+    m_CardBox.append(m_LblTitulo);
+    m_CardBox.append(m_LblInstruccion);
+    m_CardBox.append(m_EntryKeyword);
+    m_CardBox.append(m_EntryUrl);
+    m_CardBox.append(m_BtnBuscar);
+    m_CardBox.append(m_BtnVolver);
+   
+
+    m_CenterBox.set_center_widget(m_CardBox);
+    append(m_CenterBox);
+
+    m_BtnVolver.signal_clicked().connect(sigc::mem_fun(*this, &VistaBusqueda::on_volver_clicked));
+    m_BtnBuscar.signal_clicked().connect(sigc::mem_fun(*this, &VistaBusqueda::on_buscar_clicked));
+}
+
+void VistaBusqueda::on_volver_clicked() { m_notebook.set_current_page(0); }
+void VistaBusqueda::on_buscar_clicked() { std::cout << "Buscando..." << std::endl; }
+
+
+// =========================================================
+// 3. IMPLEMENTACIÓN VISTA ANÁLISIS (SIN RADIOS)
+// =========================================================
+VistaAnalisis::VistaAnalisis(Gtk::Notebook& notebook) 
+    : Gtk::Box(Gtk::Orientation::VERTICAL), m_notebook(notebook) 
+{
+    m_CardBox.add_css_class("menu-card");
+    m_CardBox.set_orientation(Gtk::Orientation::VERTICAL);
+    m_CardBox.set_spacing(15);
+    m_CardBox.set_margin(50);
+    m_CardBox.set_valign(Gtk::Align::CENTER);
+    m_CardBox.set_halign(Gtk::Align::CENTER);
+
+    m_LblTitulo.set_text("Análisis Estructural");
+    m_LblTitulo.add_css_class("titulo-label");
+
+    m_LblInstruccion.set_markup("<span size='x-large' weight='bold'>URL para analizar:</span>");
+    m_LblInstruccion.add_css_class("texto-instruccion");
+
+    m_EntryUrl.set_placeholder_text("https://sitio.com");
+    m_EntryUrl.add_css_class("entry-url");
+    m_EntryUrl.set_size_request(400, -1);
+
+    m_BtnAnalizar.set_label("Ejecutar Análisis");
+    m_BtnVolver.set_label("Volver al Menú");
+    m_BtnVolver.add_css_class("btn-salir");
+
+    // Armado (SIN RADIOS)
+    m_CardBox.append(m_LblTitulo);
+    m_CardBox.append(m_LblInstruccion);
+    m_CardBox.append(m_EntryUrl);
+    m_CardBox.append(m_BtnAnalizar);
+    m_CardBox.append(m_BtnVolver);
+
+    m_CenterBox.set_center_widget(m_CardBox);
+    append(m_CenterBox);
+
+    m_BtnVolver.signal_clicked().connect(sigc::mem_fun(*this, &VistaAnalisis::on_volver_clicked));
+    m_BtnAnalizar.signal_clicked().connect(sigc::mem_fun(*this, &VistaAnalisis::on_analizar_clicked));
+}
+
+void VistaAnalisis::on_volver_clicked() { m_notebook.set_current_page(0); }
+void VistaAnalisis::on_analizar_clicked() { std::cout << "Analizando Estructura..." << std::endl; }
+
+
+// =========================================================
+// 4. IMPLEMENTACIÓN VISTA ENLACES (Solo Botones)
+// =========================================================
+VistaEnlaces::VistaEnlaces(Gtk::Notebook& notebook) 
+    : Gtk::Box(Gtk::Orientation::VERTICAL), m_notebook(notebook) 
+{
+    m_CardBox.add_css_class("menu-card");
+    m_CardBox.set_orientation(Gtk::Orientation::VERTICAL);
+    m_CardBox.set_spacing(15);
+    m_CardBox.set_margin(50);
+    m_CardBox.set_valign(Gtk::Align::CENTER);
+    m_CardBox.set_halign(Gtk::Align::CENTER);
+
+    m_LblTitulo.set_text("Enlaces Almacenados");
+    m_LblTitulo.add_css_class("titulo-label");
+
+    m_LblInfo.set_markup("<span size='x-large' weight='bold'>Ver la base de datos</span>");
+    m_LblInfo.add_css_class("texto-instruccion");
+
+    m_BtnMostrar.set_label("Cargar Lista");
+    m_BtnVolver.set_label("Volver al Menú");
+    m_BtnVolver.add_css_class("btn-salir");
+
+    // Armado (Ni inputs ni radios)
+    m_CardBox.append(m_LblTitulo);
+    m_CardBox.append(m_LblInfo);
+    m_CardBox.append(m_BtnMostrar);
+    m_CardBox.append(m_BtnVolver);
+
+    m_CenterBox.set_center_widget(m_CardBox);
+    append(m_CenterBox);
+
+    m_BtnVolver.signal_clicked().connect(sigc::mem_fun(*this, &VistaEnlaces::on_volver_clicked));
+    m_BtnMostrar.signal_clicked().connect(sigc::mem_fun(*this, &VistaEnlaces::on_mostrar_clicked));
+}
+
+void VistaEnlaces::on_volver_clicked() { m_notebook.set_current_page(0); }
+void VistaEnlaces::on_mostrar_clicked() { std::cout << "Mostrando enlaces..." << std::endl; }
+
+
+// =========================================================
+// IMPLEMENTACIÓN INTERFAZ PRINCIPAL
+// =========================================================
 Interfaz::Interfaz() {
-    set_title("Web Crawler");
+    set_title("Web Crawler Profesional");
     set_default_size(900, 900);
 
-    // 1. CARGA DE CSS (INTACTO)
     const std::string ESTILO_CSS = R"(
         window, notebook, stack { 
             background-color: #222223; 
@@ -150,6 +217,8 @@ Interfaz::Interfaz() {
             background-color: #BCB4FF; 
             border-radius: 15px; 
             padding: 80px; 
+            min-width: 500px;  /* Ancho mínimo */
+            min-height: 450px;
             box-shadow: 0px 4px 15px rgba(0,0,0,0.5); 
         }
 
@@ -205,7 +274,7 @@ Interfaz::Interfaz() {
         }
 
         .texto-instruccion {
-            font-size: 28px;   /* Tamaño de letra */
+            font-size: 20px;   /* Tamaño de letra */
             font-weight: bold;
             color: #222223;
             margin-bottom: 15px; /* Separación con el input */
@@ -215,34 +284,30 @@ Interfaz::Interfaz() {
         .entry-url {
             font-size: 20px;    /* Tamaño del texto que escribes */
             padding: 15px;      /* Hace la caja más "gorda" (relleno interno) */
-            border-radius: 8px; /* Bordes redondeados */
+            border-radius: px; /* Bordes redondeados */
             color: black;
             background-color: white;
-            border: 2px solid #8bc34a; /* Un borde verde para que resalte */
+            border: 2px solid #8bc34a; /* Un borde verde para que resalte */    
         }
     )";
 
     auto css_provider = Gtk::CssProvider::create();
     css_provider->load_from_data(ESTILO_CSS);
+    Gtk::StyleContext::add_provider_for_display(Gdk::Display::get_default(), css_provider, GTK_STYLE_PROVIDER_PRIORITY_USER);
 
-    Gtk::StyleContext::add_provider_for_display(
-        Gdk::Display::get_default(), 
-        css_provider, 
-        GTK_STYLE_PROVIDER_PRIORITY_USER
-    );
-
-    // 2. CONFIGURACIÓN DEL NOTEBOOK
+    // Config Notebook
     m_Notebook.set_scrollable(true);
     m_Notebook.set_show_tabs(true);
     m_Notebook.set_show_border(false);
 
     // --- PESTAÑA 0: INICIO ---
-    m_titulo_principal.set_text("MENÚ");
+    m_titulo_principal.set_text("MENÚ PRINCIPAL");
     m_titulo_principal.add_css_class("titulo-label");
 
     m_MenuContainer.add_css_class("menu-card");
-    m_MenuContainer.set_orientation(Gtk::Orientation::VERTICAL); // Importante: Vertical
+    m_MenuContainer.set_orientation(Gtk::Orientation::VERTICAL);
     m_MenuContainer.set_spacing(10);
+    m_MenuContainer.set_margin(50); // Margen para que no pegue
     m_MenuContainer.set_valign(Gtk::Align::CENTER);
     m_MenuContainer.set_halign(Gtk::Align::CENTER);
 
@@ -263,30 +328,35 @@ Interfaz::Interfaz() {
     m_CenterBoxInicio.set_center_widget(m_MenuContainer);
     m_Notebook.append_page(m_CenterBoxInicio, "Inicio");
 
-    // --- PESTAÑAS SECUNDARIAS ---
+    // --- AQUÍ INSTANCIAMOS LAS CLASES INDIVIDUALES ---
     
-    // Creamos las instancias (Gestión de memoria automática con make_managed)
-    auto* pagina1 = Gtk::make_managed<VentanaSecundaria>("Recopilación", m_Notebook);
-    auto* pagina2 = Gtk::make_managed<VentanaSecundaria>("Búsqueda", m_Notebook);
-    auto* pagina3 = Gtk::make_managed<VentanaSecundaria>("Análisis", m_Notebook);
-    auto* pagina4 = Gtk::make_managed<VentanaSecundaria>("Enlaces", m_Notebook);
+    // 1. Recopilación (Con Radios)
+    auto* vistaRecopilar = Gtk::make_managed<VistaRecopilacion>(m_Notebook);
+    m_Notebook.append_page(*vistaRecopilar, "Recopilar");
 
-    m_Notebook.append_page(*pagina1, "Recopilar");
-    m_Notebook.append_page(*pagina2, "Buscar");
-    m_Notebook.append_page(*pagina3, "Análisis");
-    m_Notebook.append_page(*pagina4, "Enlaces");
+    // 2. Búsqueda (Sin Radios)
+    auto* vistaBuscar = Gtk::make_managed<VistaBusqueda>(m_Notebook);
+    m_Notebook.append_page(*vistaBuscar, "Buscar");
 
-    // Señales del Menú Principal
+    // 3. Análisis (Sin Radios)
+    auto* vistaAnalisis = Gtk::make_managed<VistaAnalisis>(m_Notebook);
+    m_Notebook.append_page(*vistaAnalisis, "Análisis");
+
+    // 4. Enlaces (Solo lista)
+    auto* vistaEnlaces = Gtk::make_managed<VistaEnlaces>(m_Notebook);
+    m_Notebook.append_page(*vistaEnlaces, "Enlaces");
+
+    // Señales para navegar
     m_Btn1.signal_clicked().connect([this]{ m_Notebook.set_current_page(1); });
     m_Btn2.signal_clicked().connect([this]{ m_Notebook.set_current_page(2); });
     m_Btn3.signal_clicked().connect([this]{ m_Notebook.set_current_page(3); });
     m_Btn4.signal_clicked().connect([this]{ m_Notebook.set_current_page(4); });
-    
     m_BtnSalir.signal_clicked().connect(sigc::mem_fun(*this, &Interfaz::on_salir_clicked));
 
     set_child(m_Notebook);
 }
 
-void Interfaz::on_salir_clicked() {
-    hide(); 
-}
+void Interfaz::on_salir_clicked() { 
+    hide();
+ }
+
