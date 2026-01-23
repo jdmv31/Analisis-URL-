@@ -68,3 +68,10 @@ void Cola::recorrerCola(std::function<bool(string,int)> accion){
         actual = actual->siguiente;
     }
 }
+
+
+bool Cola::colaVacia(){
+    if (frente == nullptr)
+        return true;
+    return false;
+}

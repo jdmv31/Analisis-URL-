@@ -14,6 +14,9 @@ using std::vector;
 
 Peticion::Peticion(){
     urlSolicitada = "";
+    paginasHuerfanas = 0;
+    promedioLinks = 0;
+    cantImagenes = 0;
     // c++ automaticamente usa el constructor del objeto cola, no es necesario especificar
 }
 
@@ -125,7 +128,7 @@ void Peticion::leerInformacion(){
     gestorFicheros.leerCola(colaPrioridad);
 }
 
-bool Peticion::buscarEnArbol(GumboNode* nodo, const string& palabra) {
+bool Peticion::buscarEnArbol(GumboNode* nodo,string palabra) {
     if (nodo->type == GUMBO_NODE_TEXT) {
         std::string texto = std::string(nodo->v.text.text);
         if (texto.find(palabra) != std::string::npos) {
@@ -134,7 +137,7 @@ bool Peticion::buscarEnArbol(GumboNode* nodo, const string& palabra) {
     } 
     else if (nodo->type == GUMBO_NODE_ELEMENT) {
         GumboVector* hijos = &nodo->v.element.children;
-        for (unsigned int i = 0; i < hijos->length; ++i) {
+        for (int i = 0; i < hijos->length; ++i) {
             if (buscarEnArbol(static_cast<GumboNode*>(hijos->data[i]), palabra)) {
                 return true; 
             }
@@ -144,27 +147,90 @@ bool Peticion::buscarEnArbol(GumboNode* nodo, const string& palabra) {
 }
 
 bool Peticion::buscarPalabra(string palabraClave){
-    bool encontrado = false; // 1. Variable para saber si tuvimos éxito
+    bool algunEncontrado = false;
+    int contadorHallazgos = 0;
 
-    // 2. Corrección de sintaxis en la lambda: [&](...)->bool { ... }
-    colaPrioridad.recorrerYOperar([&](string url, int prioridad) -> bool {
-        
-        cpr::Response r = cpr::Get(cpr::Url{url}); // 3. Corregido "Response"
+    colaPrioridad.recorrerCola([&](string url, int prioridad) -> bool {
+        cpr::Response r = cpr::Get(cpr::Url{url});
         
         if (r.status_code == 200){
-            GumboOutput* salida = gumbo_parse(r.text.c_str());
-            
-            // 4. Usamos 'palabraClave' que es el parámetro que recibimos
+            GumboOutput* salida = gumbo_parse(r.text.c_str());  
             if (buscarEnArbol(salida->root, palabraClave)) {
+                algunEncontrado = true;
+                contadorHallazgos++;
+
                 gumbo_destroy_output(&kGumboDefaultOptions, salida);
                 
-                encontrado = true; // ¡Marcamos éxito!
-                return true; // Retornamos TRUE para DETENER el recorrido de la cola
+                return false; 
             }
             gumbo_destroy_output(&kGumboDefaultOptions, salida);
         }
-        return false; // Retornamos FALSE para SEGUIR con el siguiente link
+        
+        return false; 
     });
 
-    return encontrado; // 5. Devolvemos el resultado final
+    return algunEncontrado;
+}
+
+
+int Peticion::contarImagenes(GumboNode* nodo){
+    if (nodo->type != GUMBO_NODE_ELEMENT) 
+        return 0;
+
+    int cont = (nodo->v.element.tag == GUMBO_TAG_IMG) ? 1 : 0;
+
+    GumboVector* hijos = &nodo->v.element.children;
+    for (int i = 0; i < hijos->length; ++i) {
+        cont += contarImagenes(static_cast<GumboNode*>(hijos->data[i]));
+    }
+    return cont;
+}
+
+
+int Peticion::contarLinks(GumboNode* nodo){
+    if (nodo->type != GUMBO_NODE_ELEMENT) 
+        return 0;
+
+    int cont = (nodo->v.element.tag == GUMBO_TAG_A) ? 1 : 0;
+    
+    GumboVector* hijos = &nodo->v.element.children;
+    for (int i = 0; i < hijos->length; ++i) {
+        cont += contarLinks(static_cast<GumboNode*>(hijos->data[i]));
+    }
+    return cont; 
+}   
+
+
+void Peticion::calcularMetricas(){
+    cantImagenes = 0;
+    paginasHuerfanas = 0;
+    int totalLinks = 0;
+    promedioLinks = 0;
+    colaPrioridad.recorrerCola([&](string url, int prioridad) -> bool {
+        cpr::Response r = cpr::Get(cpr::Url{url});
+
+        if (r.status_code == 404 || r.status_code == 403 || r.status_code == 0)
+            paginasHuerfanas++;
+        
+        if (r.status_code == 200){
+            GumboOutput* salida = gumbo_parse(r.text.c_str());  
+            cantImagenes += contarImagenes(salida->root);
+            totalLinks += contarLinks(salida->root);
+            gumbo_destroy_output(&kGumboDefaultOptions, salida);
+        }
+        return false;
+    });
+
+    promedioLinks = (float) totalLinks / (colaPrioridad.getLongitud());
+
+    std::cout << "\n--- Reporte de Metricas ---" << std::endl;
+    std::cout << "Paginas Huerfanas: " << paginasHuerfanas << std::endl;
+    std::cout << "Cantidad de Imagenes: " << cantImagenes << std::endl;
+    std::cout << "Promedio de Enlaces: " << promedioLinks << std::endl;
+    std::cout << "Cantidad de paginas visitadas: "<<colaPrioridad.getLongitud()<<std::endl;
+}
+
+
+bool Peticion::datosCola(){
+    return colaPrioridad.colaVacia();
 }

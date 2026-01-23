@@ -12,6 +12,9 @@ class Peticion{
     private:
         string urlSolicitada;
         const int MAX_PAGINAS = 25;
+        int paginasHuerfanas;
+        float promedioLinks;
+        int cantImagenes;
         Cola colaPrioridad;
         Fichero gestorFicheros;
     public:
@@ -24,5 +27,16 @@ class Peticion{
         int obtenerEtiquetasTexto(GumboNode* nodo);
         void procesarLinks(vector<string> urlsRecolectadas);
         bool buscarPalabra(string palabraClave);
-        bool buscarEnArbol(GumboNode* nodo, const string& palabra)
+        bool buscarEnArbol(GumboNode* nodo,string palabra);
+        void calcularMetricas();
+        int contarImagenes(GumboNode* nodo);
+        int contarLinks(GumboNode* nodo);
+        bool datosCola();
+        /*
+            metricas estructurales: 
+            cantidad de paginas huerfanas: las que no se puede acceder
+            cantidad de nodos: la cantidad de paginas
+            cantidad de imagenes: cantidad de imagenes
+            promedio de enlaces en la pagina : cantidad de links / cantidad de paginas
+        */
 };

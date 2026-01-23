@@ -30,4 +30,5 @@ class Cola{
         void copiarDatos(vector<vectorAux>& lista);
         void imprimirCola();
         void recorrerCola(std::function<bool(string,int)> accion);
+        bool colaVacia();
 };

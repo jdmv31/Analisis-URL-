@@ -64,8 +64,6 @@ VistaRecopilacion::VistaRecopilacion(Gtk::Notebook& notebook)
     m_BtnAnalizar.signal_clicked().connect(sigc::mem_fun(*this, &VistaRecopilacion::on_analizar_clicked));
 }
 
-
-
 void VistaRecopilacion::on_volver_clicked() { m_notebook.set_current_page(0); }
 void VistaRecopilacion::on_analizar_clicked() {
     string url = m_EntryUrl.get_text();
@@ -127,7 +125,21 @@ VistaBusqueda::VistaBusqueda(Gtk::Notebook& notebook)
 }
 
 void VistaBusqueda::on_volver_clicked() { m_notebook.set_current_page(0); }
-void VistaBusqueda::on_buscar_clicked() { std::cout << "Buscando..." << std::endl; }
+void VistaBusqueda::on_buscar_clicked() {
+    string palabra = m_EntryKeyword.get_text();
+    string url = m_EntryUrl.get_text();
+    bool encontrado = false;
+    if (!url.empty()){
+        int estado = peticion.realizarPeticion(url);
+        if (estado == 200)
+            peticion.buscarPalabra(palabra);
+    }
+
+    /*
+        if (!encontrado)
+    */
+
+}
 
 
 // =========================================================
@@ -369,6 +381,8 @@ Interfaz::Interfaz() {
 
     set_child(m_Notebook);
     peticion.leerInformacion();
+    if (!peticion.datosCola())
+        peticion.calcularMetricas();
 }
 
 void Interfaz::on_salir_clicked() { 
