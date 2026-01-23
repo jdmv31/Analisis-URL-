@@ -59,3 +59,12 @@ void Cola::copiarDatos(vector<vectorAux>& lista){
         nuevonodo = nuevonodo->siguiente;
     }
 }
+
+void Cola::recorrerCola(std::function<bool(string,int)> accion){
+    Nodo* actual = frente;
+    while (actual != nullptr){
+        if (accion(actual->url, actual->prioridad))
+            return;         
+        actual = actual->siguiente;
+    }
+}

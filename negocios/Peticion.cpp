@@ -63,9 +63,11 @@ void Peticion::procesarLinks(vector<string> urlsRecolectadas){
 }
 
 void Peticion::extraerEtiquetas(GumboNode* nodo, vector<string>& urlsRecolectadas){
-    int totalGlobal = colaPrioridad.getLongitud() + urlsRecolectadas.size();
-
-    if (totalGlobal >= MAX_PAGINAS)
+    int totalActual = colaPrioridad.getLongitud() + urlsRecolectadas.size();
+    // va a buscar un total de 25 links, los primeros 25
+    // si no tiene acceso a algun link, por ejemplo un forbidden o simplemente no se puede hacer nada
+    // entonces no se toma en cuenta para la cola de prioridad, pueden haber menos de 25
+    if (totalActual >= MAX_PAGINAS)
         return;
 
     if (nodo->type != GUMBO_NODE_ELEMENT)
@@ -77,7 +79,6 @@ void Peticion::extraerEtiquetas(GumboNode* nodo, vector<string>& urlsRecolectada
              string url = static_cast<string>(href->value);
              if (url.find("http") == 0)
                  urlsRecolectadas.push_back(url);
-             
         }
     }
 
@@ -122,4 +123,48 @@ void Peticion::guardarInformacion(){
 
 void Peticion::leerInformacion(){
     gestorFicheros.leerCola(colaPrioridad);
+}
+
+bool Peticion::buscarEnArbol(GumboNode* nodo, const string& palabra) {
+    if (nodo->type == GUMBO_NODE_TEXT) {
+        std::string texto = std::string(nodo->v.text.text);
+        if (texto.find(palabra) != std::string::npos) {
+            return true;
+        }
+    } 
+    else if (nodo->type == GUMBO_NODE_ELEMENT) {
+        GumboVector* hijos = &nodo->v.element.children;
+        for (unsigned int i = 0; i < hijos->length; ++i) {
+            if (buscarEnArbol(static_cast<GumboNode*>(hijos->data[i]), palabra)) {
+                return true; 
+            }
+        }
+    }
+    return false;
+}
+
+bool Peticion::buscarPalabra(string palabraClave){
+    bool encontrado = false; // 1. Variable para saber si tuvimos éxito
+
+    // 2. Corrección de sintaxis en la lambda: [&](...)->bool { ... }
+    colaPrioridad.recorrerYOperar([&](string url, int prioridad) -> bool {
+        
+        cpr::Response r = cpr::Get(cpr::Url{url}); // 3. Corregido "Response"
+        
+        if (r.status_code == 200){
+            GumboOutput* salida = gumbo_parse(r.text.c_str());
+            
+            // 4. Usamos 'palabraClave' que es el parámetro que recibimos
+            if (buscarEnArbol(salida->root, palabraClave)) {
+                gumbo_destroy_output(&kGumboDefaultOptions, salida);
+                
+                encontrado = true; // ¡Marcamos éxito!
+                return true; // Retornamos TRUE para DETENER el recorrido de la cola
+            }
+            gumbo_destroy_output(&kGumboDefaultOptions, salida);
+        }
+        return false; // Retornamos FALSE para SEGUIR con el siguiente link
+    });
+
+    return encontrado; // 5. Devolvemos el resultado final
 }

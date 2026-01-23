@@ -1,6 +1,7 @@
 #pragma once
 #include <string>
 #include <vector>
+#include <functional>
 
 using std::vector;
 using std::string;
@@ -28,4 +29,5 @@ class Cola{
         Nodo* crearNodo(string url, int prioridad);
         void copiarDatos(vector<vectorAux>& lista);
         void imprimirCola();
+        void recorrerCola(std::function<bool(string,int)> accion);
 };
