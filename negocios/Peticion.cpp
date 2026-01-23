@@ -115,6 +115,11 @@ void Peticion::guardarInformacion(){
     gestorFicheros.setPadre(urlSolicitada);
     int elementos = colaPrioridad.getLongitud();
     gestorFicheros.setContador(elementos);
-    if (gestorFicheros.guardarPadre() && gestorFicheros.guardarContador())
+    if (gestorFicheros.guardarPadre() && gestorFicheros.guardarContador() && gestorFicheros.guardarCola(colaPrioridad))
         std::cout<<"bien"<<endl;
+}   
+
+
+void Peticion::leerInformacion(){
+    gestorFicheros.leerCola(colaPrioridad);
 }

@@ -2,6 +2,8 @@
 #include <string>
 #include <negocios/Cola.h>
 
+using std::string;
+
 class Fichero{
     private:
         int contadorUrl;
@@ -16,6 +18,6 @@ class Fichero{
         bool guardarContador();
         bool leerPadre();
         bool guardarPadre();
-        bool guardarCola(Cola colaPrioridad);
-        bool leerCola(Cola colaPrioridad);
+        bool guardarCola(Cola &colaPrioridad);
+        bool leerCola(Cola &colaPrioridad);
 };

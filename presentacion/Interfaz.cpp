@@ -1,5 +1,11 @@
 #include "Interfaz.h"
 #include <iostream>
+#include <negocios/Peticion.h>
+#include <string>
+
+using std::string;
+
+Peticion peticion;
 
 // =========================================================
 // 1. IMPLEMENTACIÓN VISTA RECOPILACIÓN (COMPLETA)
@@ -61,7 +67,15 @@ VistaRecopilacion::VistaRecopilacion(Gtk::Notebook& notebook)
 
 
 void VistaRecopilacion::on_volver_clicked() { m_notebook.set_current_page(0); }
-void VistaRecopilacion::on_analizar_clicked() { std::cout << "Recopilando..." << std::endl; }
+void VistaRecopilacion::on_analizar_clicked() {
+    string url = m_EntryUrl.get_text();
+    if (!url.empty()){
+        int estado = peticion.realizarPeticion(url);
+        if (estado == 200)
+            peticion.guardarInformacion();
+        // agregale algo para los mensajes nicole
+    }
+}
 
 
 // =========================================================
@@ -205,7 +219,7 @@ void VistaEnlaces::on_mostrar_clicked() { std::cout << "Mostrando enlaces..." <<
 // IMPLEMENTACIÓN INTERFAZ PRINCIPAL
 // =========================================================
 Interfaz::Interfaz() {
-    set_title("Web Crawler Profesional");
+    set_title("Web Crawler");
     set_default_size(900, 900);
 
     const std::string ESTILO_CSS = R"(
@@ -354,6 +368,7 @@ Interfaz::Interfaz() {
     m_BtnSalir.signal_clicked().connect(sigc::mem_fun(*this, &Interfaz::on_salir_clicked));
 
     set_child(m_Notebook);
+    peticion.leerInformacion();
 }
 
 void Interfaz::on_salir_clicked() { 

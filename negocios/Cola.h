@@ -1,7 +1,14 @@
 #pragma once
 #include <string>
+#include <vector>
 
+using std::vector;
 using std::string;
+
+struct vectorAux{
+    string url;
+    int prioridad;
+};
 
 struct Nodo{
     string url;
@@ -19,4 +26,6 @@ class Cola{
         int getLongitud();
         void insertarUrl(string url, int prioridad);
         Nodo* crearNodo(string url, int prioridad);
+        void copiarDatos(vector<vectorAux>& lista);
+        void imprimirCola();
 };

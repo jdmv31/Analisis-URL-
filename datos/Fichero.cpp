@@ -3,7 +3,10 @@
 #include <filesystem>
 #include <fstream>
 #include <negocios/Cola.h>
+#include <iostream>
+#include <vector>
 
+using std::vector;
 using std::string;
 namespace fs = std::filesystem;
 
@@ -102,37 +105,55 @@ bool Fichero::guardarPadre(){
         return false;
 }
 
-bool Fichero::guardarCola(Cola colaPrioridad){
-    /*
-    fs::path rutaBase(RUTA_DATOS); 
-    fs::path rutaCarpeta = rutaBase / "urlsAlmacenadas";
+bool Fichero::guardarCola(Cola &colaPrioridad){
+    vector<vectorAux> aux;
+    colaPrioridad.copiarDatos(aux);
+
+    fs::path rutaBase(RUTA_DATOS);
+    fs::path rutaCarpeta = rutaBase / "urlAlmacenadas";
     if (!fs::exists(rutaCarpeta))
         fs::create_directories(rutaCarpeta);
 
-
     fs::path rutaArchivo = rutaCarpeta / ("colaAlmacenada.bin");
-    std::ofstream archivo(rutaArchivo,std::ios::binary | std::ios::trunc);
-    
+    std::ofstream archivo (rutaArchivo, std::ios::binary | std::ios::trunc);
     if (!archivo.is_open()) return false;
+    size_t elementos = aux.size();
+    archivo.write(reinterpret_cast<char*>(&elementos),sizeof(size_t));
 
-    Nodo* actual = colaPrioridad->frente;
-    
-    while (actual != nullptr) {
-        int tamanoUrl = actual->url.size();
-        archivo.write(reinterpret_cast<char*>(&tamanoUrl), sizeof(int));
-        archivo.write(actual->url.c_str(), tamanoUrl);
-        archivo.write(reinterpret_cast<char*>(&actual->prioridad), sizeof(int));
-        actual = actual->siguiente;
+    for (auto& item: aux){
+        archivo.write(reinterpret_cast<char*>(&item.prioridad),sizeof(int));
+        size_t url = item.url.size();
+        archivo.write(reinterpret_cast<char*>(&url),sizeof(size_t));
+        archivo.write(item.url.c_str(),url);
     }
-
     archivo.close();
     return true;
-    */
-   return true;
 }
 
 
-bool Fichero::leerCola(Cola colaPrioridad){
-    return true;
+bool Fichero::leerCola(Cola &colaPrioridad){
 
+    fs::path rutaBase(RUTA_DATOS);
+    fs::path rutaCarpeta = rutaBase / "urlAlmacenadas";
+    if (!fs::exists(rutaCarpeta))
+        fs::create_directories(rutaCarpeta);
+
+    fs::path rutaArchivo = rutaCarpeta / ("colaAlmacenada.bin");
+    std::ifstream archivo (rutaArchivo, std::ios::binary);
+    if (!archivo.is_open()) return false;
+    
+    size_t elementos = 0;
+    archivo.read(reinterpret_cast<char*>(&elementos),sizeof(size_t));
+    for (int i = 0; i < elementos; i++){
+        vectorAux item;
+        archivo.read(reinterpret_cast<char*>(&item.prioridad),sizeof(int));
+        size_t url = 0;
+        archivo.read(reinterpret_cast<char*>(&url),sizeof(size_t));
+        item.url.resize(url);
+        archivo.read(&item.url[0],url);
+        colaPrioridad.insertarUrl(item.url,item.prioridad);
+    }
+
+
+    return true;
 }

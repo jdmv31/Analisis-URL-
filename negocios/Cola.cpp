@@ -1,6 +1,6 @@
 #include "negocios/Cola.h"
+#include "datos/Fichero.h"
 #include <string>
-#include <iostream>
 
 using std::string;
 
@@ -50,4 +50,12 @@ void Cola::insertarUrl(string url, int prioridad){
     }
 
     longitud++;
+}
+
+void Cola::copiarDatos(vector<vectorAux>& lista){
+    Nodo *nuevonodo = frente;
+    while (nuevonodo != nullptr){
+        lista.push_back({nuevonodo->url,nuevonodo->prioridad});
+        nuevonodo = nuevonodo->siguiente;
+    }
 }
