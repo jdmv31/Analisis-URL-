@@ -20,6 +20,23 @@ Peticion::Peticion(){
     // c++ automaticamente usa el constructor del objeto cola, no es necesario especificar
 }
 
+int Peticion::getCantIMG(){
+    return cantImagenes;
+}
+
+int Peticion::getPromedioLinks(){
+    return promedioLinks;
+}
+
+int Peticion::getPaginasHuerfanas(){
+    return paginasHuerfanas;
+}
+
+int Peticion::getCantNodos(){
+    return colaPrioridad.getLongitud();
+}
+
+
 int Peticion::realizarPeticion(string url) {
     auto r = cpr::Get(
         cpr::Url{static_cast<string_view>(url)},

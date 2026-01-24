@@ -20,6 +20,10 @@ class Peticion{
     public:
         Peticion();
         int realizarPeticion(string url);
+        int getCantIMG();
+        int getPromedioLinks();
+        int getPaginasHuerfanas();
+        int getCantNodos();
         void parsearHtml (string html);
         void extraerEtiquetas(GumboNode* nodo,vector<string>& urlsRecolectadas);
         void guardarInformacion();
