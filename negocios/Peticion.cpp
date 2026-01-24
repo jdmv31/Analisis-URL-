@@ -128,42 +128,21 @@ void Peticion::leerInformacion(){
     gestorFicheros.leerCola(colaPrioridad);
 }
 
-bool Peticion::buscarEnArbol(GumboNode* nodo,string palabra) {
-    if (nodo->type == GUMBO_NODE_TEXT) {
-        std::string texto = std::string(nodo->v.text.text);
-        if (texto.find(palabra) != std::string::npos) {
-            return true;
-        }
-    } 
-    else if (nodo->type == GUMBO_NODE_ELEMENT) {
-        GumboVector* hijos = &nodo->v.element.children;
-        for (int i = 0; i < hijos->length; ++i) {
-            if (buscarEnArbol(static_cast<GumboNode*>(hijos->data[i]), palabra)) {
-                return true; 
-            }
-        }
-    }
-    return false;
-}
 
 bool Peticion::buscarPalabra(string palabraClave){
     bool algunEncontrado = false;
-    int contadorHallazgos = 0;
 
     colaPrioridad.recorrerCola([&](string url, int prioridad) -> bool {
-        cpr::Response r = cpr::Get(cpr::Url{url});
-        
-        if (r.status_code == 200){
-            GumboOutput* salida = gumbo_parse(r.text.c_str());  
-            if (buscarEnArbol(salida->root, palabraClave)) {
-                algunEncontrado = true;
-                contadorHallazgos++;
-
-                gumbo_destroy_output(&kGumboDefaultOptions, salida);
-                
-                return false; 
-            }
-            gumbo_destroy_output(&kGumboDefaultOptions, salida);
+        if (url.find(palabraClave) != std::string::npos) {
+            std::cout << "\n=== ¡COINCIDENCIA EN LA URL! ===" << std::endl;
+            std::cout << "Ruta de navegacion para llegar al objetivo:" << std::endl;
+            std::cout << "1. Ingresar a: " << gestorFicheros.getPadre() << std::endl;
+            std::cout << "2. Clickear en:  " << url << std::endl;                  
+            
+            std::cout << "\n(Prioridad del enlace: " << prioridad << ")" << std::endl;
+            
+            algunEncontrado = true;
+            return true;
         }
         
         return false; 

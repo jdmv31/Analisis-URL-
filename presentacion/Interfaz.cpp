@@ -132,12 +132,9 @@ void VistaBusqueda::on_buscar_clicked() {
     if (!url.empty()){
         int estado = peticion.realizarPeticion(url);
         if (estado == 200)
-            peticion.buscarPalabra(palabra);
+            if(!peticion.buscarPalabra(palabra));
+                std::cout<<"no";
     }
-
-    /*
-        if (!encontrado)
-    */
 
 }
 
@@ -381,8 +378,12 @@ Interfaz::Interfaz() {
 
     set_child(m_Notebook);
     peticion.leerInformacion();
+
+    /*
     if (!peticion.datosCola())
         peticion.calcularMetricas();
+*/
+
 }
 
 void Interfaz::on_salir_clicked() { 

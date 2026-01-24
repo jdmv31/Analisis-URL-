@@ -27,7 +27,6 @@ class Peticion{
         int obtenerEtiquetasTexto(GumboNode* nodo);
         void procesarLinks(vector<string> urlsRecolectadas);
         bool buscarPalabra(string palabraClave);
-        bool buscarEnArbol(GumboNode* nodo,string palabra);
         void calcularMetricas();
         int contarImagenes(GumboNode* nodo);
         int contarLinks(GumboNode* nodo);
