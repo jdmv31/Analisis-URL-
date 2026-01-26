@@ -65,21 +65,10 @@ void Peticion::parsearHtml (string html){
 }
 
 void Peticion::procesarLinks(vector<string> urlsRecolectadas){
-    vector<cpr::AsyncResponse> links;
-    links.reserve(urlsRecolectadas.size());
-    for (string url : urlsRecolectadas){
-        links.push_back(cpr::GetAsync(cpr::Url{url})); 
+    for (const string& url : urlsRecolectadas){
+        int prioridad = url.length();
+        colaPrioridad.insertarUrl(url, prioridad);
     }
-    for (int i = 0; i < links.size(); i++) {
-        cpr::Response r = links[i].get();
-        if (r.status_code == 200) {
-            GumboOutput* output = gumbo_parse(r.text.c_str());
-            int cantidad = obtenerEtiquetasTexto(output->root);
-            colaPrioridad.insertarUrl(urlsRecolectadas[i], cantidad);
-            gumbo_destroy_output(&kGumboDefaultOptions, output);
-        }
-    }
-
 }
 
 void Peticion::extraerEtiquetas(GumboNode* nodo, vector<string>& urlsRecolectadas){
@@ -109,27 +98,6 @@ void Peticion::extraerEtiquetas(GumboNode* nodo, vector<string>& urlsRecolectada
             
         extraerEtiquetas(static_cast<GumboNode*>(hijos->data[i]), urlsRecolectadas);
     }
-}
-
-int Peticion::obtenerEtiquetasTexto(GumboNode* nodo){
-    if (nodo->type != GUMBO_NODE_ELEMENT)
-        return 0;
-
-    int cuentaActual = 0;
-    if (nodo->v.element.tag == GUMBO_TAG_P || nodo->v.element.tag == GUMBO_TAG_H1
-        || nodo->v.element.tag == GUMBO_TAG_H2 || nodo->v.element.tag == GUMBO_TAG_H3
-        || nodo->v.element.tag == GUMBO_TAG_H4 || nodo->v.element.tag == GUMBO_TAG_H5
-        || nodo->v.element.tag == GUMBO_TAG_H6) 
-        cuentaActual = 1;
-
-    GumboVector* hijos = &nodo->v.element.children;
-    int sumaHijos = 0;
-    
-    for (int i = 0; i < hijos->length; i++){
-        sumaHijos += obtenerEtiquetasTexto(static_cast<GumboNode*>(hijos->data[i]));
-    }
-
-    return cuentaActual + sumaHijos;
 }
 
 void Peticion::guardarInformacion(){

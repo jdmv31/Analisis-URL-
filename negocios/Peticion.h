@@ -28,7 +28,6 @@ class Peticion{
         void extraerEtiquetas(GumboNode* nodo,vector<string>& urlsRecolectadas);
         void guardarInformacion();
         void leerInformacion();
-        int obtenerEtiquetasTexto(GumboNode* nodo);
         void procesarLinks(vector<string> urlsRecolectadas);
         bool buscarPalabra(string palabraClave);
         void calcularMetricas();
