@@ -11,7 +11,9 @@ using namespace std;
 class Peticion{
     private:
         string urlSolicitada;
-        const int MAX_PAGINAS = 40;
+        int limitePaginas;
+        int nivelProfundidad;
+        bool usarProfundidad;
         int paginasHuerfanas;
         float promedioLinks;
         int cantImagenes;
@@ -19,6 +21,8 @@ class Peticion{
         Fichero gestorFicheros;
     public:
         Peticion();
+        void reset();
+        void configurar(bool profundidad, int limite);
         int realizarPeticion(string url);
         int getCantIMG();
         int getPromedioLinks();

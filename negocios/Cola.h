@@ -28,11 +28,12 @@ class Cola{
     public:
         Cola();
         ~Cola(); // destructor de la clase
+        void vaciarCola();
         int getLongitud();
         void insertarUrl(string url, int prioridad, string urlPadre, int nivel);
         Nodo* crearNodo(string url, int prioridad, string urlPadre, int nivel);
         void copiarDatos(vector<vectorAux>& lista);
         void imprimirCola();
-        void recorrerCola(std::function<bool(string,int,string,int)> accion);
+        void recorrerCola(std::function<bool(string, int, string, int)> accion);
         bool colaVacia();
 };

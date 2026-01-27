@@ -48,11 +48,15 @@ VistaRecopilacion::VistaRecopilacion(Gtk::Notebook& notebook)
     m_BtnVolver.set_label("Volver al Menú");
     m_BtnVolver.add_css_class("btn-salir");
 
+    m_EntryLimite.set_placeholder_text("Límite (ej: 3 niveles o 25 paginas)");
+    m_EntryLimite.add_css_class("entry-url");
+
     // Armado
     m_CardBox.append(m_LblTitulo);
     m_CardBox.append(m_LblInstruccion);
     m_CardBox.append(m_EntryUrl);
     m_CardBox.append(m_RadioBox); // Agregamos radios
+    m_CardBox.append(m_EntryLimite);
     m_CardBox.append(m_BtnAnalizar);
     m_CardBox.append(m_BtnVolver);
 
@@ -67,11 +71,23 @@ VistaRecopilacion::VistaRecopilacion(Gtk::Notebook& notebook)
 void VistaRecopilacion::on_volver_clicked() { m_notebook.set_current_page(0); }
 void VistaRecopilacion::on_analizar_clicked() {
     string url = m_EntryUrl.get_text();
+    string textoLimite = m_EntryLimite.get_text();
+    
+    int valorLimite = 0;
+    try {
+        valorLimite = std::stoi(textoLimite);
+    } catch (...) {
+        valorLimite = 25;
+    }
+
     if (!url.empty()){
+        bool esProfundidad = m_RadioProfundidad.get_active();
+        peticion.configurar(esProfundidad, valorLimite);
+
         int estado = peticion.realizarPeticion(url);
+        
         if (estado == 200)
             peticion.guardarInformacion();
-        // agregale algo para los mensajes nicole
     }
 }
 
@@ -104,6 +120,21 @@ VistaBusqueda::VistaBusqueda(Gtk::Notebook& notebook)
     m_EntryUrl.add_css_class("entry-url");
     m_EntryUrl.set_size_request(400, -1);
 
+    // 3. Límite Numérico (NUEVO)
+    m_EntryLimite.set_placeholder_text("Límite (ej: 3)");
+    m_EntryLimite.add_css_class("entry-url");
+
+    // --- CONFIGURACIÓN DE RADIOS (NUEVO) ---
+    m_RadioProfundidad.set_label("Límite por Profundidad");
+    m_RadioPaginas.set_label("Límite por Máx. Páginas");
+    m_RadioPaginas.set_group(m_RadioProfundidad); // Agruparlas
+    m_RadioProfundidad.set_active(true);          // Profundidad por defecto
+
+    m_RadioBox.set_orientation(Gtk::Orientation::VERTICAL); // <--- FALTA ESTO
+    m_RadioBox.set_spacing(5);                              // <--- FALTA ESTO (Opcional, estética)
+    m_RadioBox.append(m_RadioProfundidad);                  // <--- FALTA ESTO (Vital)
+    m_RadioBox.append(m_RadioPaginas);
+
     m_BtnBuscar.set_label("Buscar");
     m_BtnVolver.set_label("Volver al Menú");
     m_BtnVolver.add_css_class("btn-salir");
@@ -111,8 +142,13 @@ VistaBusqueda::VistaBusqueda(Gtk::Notebook& notebook)
     // Armado (SIN RADIOS)
     m_CardBox.append(m_LblTitulo);
     m_CardBox.append(m_LblInstruccion);
-    m_CardBox.append(m_EntryKeyword);
-    m_CardBox.append(m_EntryUrl);
+
+    m_CardBox.append(m_EntryUrl);      // 1. URL
+    m_CardBox.append(m_EntryKeyword);  // 2. Palabra
+    m_CardBox.append(m_EntryLimite);   // 3. Cantidad Límite
+    m_CardBox.append(m_RadioBox);      // 4. Opciones
+
+
     m_CardBox.append(m_BtnBuscar);
     m_CardBox.append(m_BtnVolver);
    
@@ -128,15 +164,37 @@ void VistaBusqueda::on_volver_clicked() { m_notebook.set_current_page(0); }
 void VistaBusqueda::on_buscar_clicked() {
     string palabra = m_EntryKeyword.get_text();
     string url = m_EntryUrl.get_text();
-    bool encontrado = false;
-    if (!url.empty()){
-        int estado = peticion.realizarPeticion(url);
-        if (estado == 200){
-            if(!peticion.buscarPalabra(palabra));
-                std::cout<<"no";
-        }        
+    string textoLimite = m_EntryLimite.get_text();
+
+    int valorLimite = 0;
+    try {
+        valorLimite = std::stoi(textoLimite);
+    } catch (...) {
+        valorLimite = 3;
     }
 
+    if (!url.empty() && !palabra.empty()){ // Verificamos ambas cosas
+        std::cout << "--- Iniciando Búsqueda ---" << std::endl;
+
+        bool porProfundidad = m_RadioProfundidad.get_active();
+
+        peticion.configurar(porProfundidad, valorLimite);
+
+        int estado = peticion.realizarPeticion(url);
+        std::cout << "Estado Descarga: " << estado << std::endl;
+
+        if (estado == 200){
+            bool encontrada = peticion.buscarPalabra(palabra);
+            
+            if (!encontrada) {
+                std::cout << "La palabra '" << palabra << "' no se encontró dentro de los límites definidos." << std::endl;
+            }
+        } else {
+            std::cout << "Error al descargar la URL inicial." << std::endl;
+        }
+    } else {
+        std::cout << "Por favor ingrese una URL y una Palabra Clave." << std::endl;
+    }
 }
 
 

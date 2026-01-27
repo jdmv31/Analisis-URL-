@@ -21,6 +21,7 @@ protected:
     Gtk::Entry m_EntryUrl;
     Gtk::CheckButton m_RadioProfundidad, m_RadioPaginas; // SOLO AQUI
     Gtk::Button m_BtnAnalizar, m_BtnVolver;
+    Gtk::Entry m_EntryLimite;
 };
 
 // =========================================================
@@ -35,10 +36,13 @@ protected:
     Gtk::Notebook& m_notebook;
 
     Gtk::CenterBox m_CenterBox;
-    Gtk::Box m_CardBox;
+    Gtk::Box m_CardBox, m_RadioBox;
     Gtk::Label m_LblTitulo, m_LblInstruccion;
     Gtk::Entry m_EntryKeyword; // Entrada para palabra clave
     Gtk::Entry m_EntryUrl;
+    Gtk::Entry m_EntryLimite;
+
+    Gtk::CheckButton m_RadioProfundidad, m_RadioPaginas;
     Gtk::Button m_BtnBuscar, m_BtnVolver;
 };
 

@@ -17,6 +17,9 @@ Peticion::Peticion(){
     paginasHuerfanas = 0;
     promedioLinks = 0;
     cantImagenes = 0;
+    limitePaginas = 25;
+    nivelProfundidad = 3;
+    usarProfundidad = false;
     // c++ automaticamente usa el constructor del objeto cola, no es necesario especificar
 }
 
@@ -38,6 +41,7 @@ int Peticion::getCantNodos(){
 
 
 int Peticion::realizarPeticion(string url) {
+    reset();
     colaPrioridad.insertarUrl(url,url.length(),"Inicio",0);
     auto r = cpr::Get(
         cpr::Url{static_cast<string_view>(url)},
@@ -57,6 +61,14 @@ int Peticion::realizarPeticion(string url) {
     return 200;
 }
 
+void Peticion::reset(){
+    colaPrioridad.vaciarCola();
+    urlSolicitada = "";
+    paginasHuerfanas = 0;
+    promedioLinks = 0;
+    cantImagenes = 0;
+}
+
 void Peticion::parsearHtml (string html,string urlPadre, int nivel){
     GumboOutput* salida = gumbo_parse(html.c_str());
     vector<string> urlsRecolectadas;
@@ -65,36 +77,49 @@ void Peticion::parsearHtml (string html,string urlPadre, int nivel){
     gumbo_destroy_output(&kGumboDefaultOptions, salida);
 }
 
-void Peticion::procesarLinks(vector<string> urlsRecolectadas, string urlPadre, int nivel){
+void Peticion::procesarLinks(vector<string> urlsRecolectadas, string urlPadre, int nivelPadre){
+    int nuevoNivel = nivelPadre + 1;
+
     for (const string& url : urlsRecolectadas){
-        int prioridad = url.length();
-        colaPrioridad.insertarUrl(url, prioridad, urlPadre,nivel);
+        bool insertar = false;
+
+        if (usarProfundidad) {
+            if (nuevoNivel <= nivelProfundidad)
+                insertar = true;
+        } else {
+            if (colaPrioridad.getLongitud() < limitePaginas)
+                insertar = true;
+        }
+
+        if (insertar) {
+            int prioridad = url.length();
+            colaPrioridad.insertarUrl(url, prioridad, urlPadre, nuevoNivel);
+        }
     }
 }
 
 void Peticion::extraerEtiquetas(GumboNode* nodo, vector<string>& urlsRecolectadas){
-    int totalActual = colaPrioridad.getLongitud() + urlsRecolectadas.size();
-    // va a buscar un total de 25 links, los primeros 25
-    // si no tiene acceso a algun link, por ejemplo un forbidden o simplemente no se puede hacer nada
-    // entonces no se toma en cuenta para la cola de prioridad, pueden haber menos de 25
-    if (totalActual >= MAX_PAGINAS)
-        return;
 
-    if (nodo->type != GUMBO_NODE_ELEMENT)
-        return;
+    if (!usarProfundidad) {
+        int totalActual = colaPrioridad.getLongitud() + urlsRecolectadas.size();
+        if (totalActual >= limitePaginas) return;
+    }
+
+    if (nodo->type != GUMBO_NODE_ELEMENT) return;
 
     GumboAttribute* href;
     if (nodo->v.element.tag == GUMBO_TAG_A && (href = gumbo_get_attribute(&nodo->v.element.attributes,"href"))){
-        if (colaPrioridad.getLongitud() + urlsRecolectadas.size() < MAX_PAGINAS) {
-             string url = static_cast<string>(href->value);
-             if (url.find("http") == 0)
-                 urlsRecolectadas.push_back(url);
-        }
+        if (!usarProfundidad)
+             if (colaPrioridad.getLongitud() + urlsRecolectadas.size() >= limitePaginas) return;
+
+        string url = static_cast<string>(href->value);
+        if (url.find("http") == 0)
+             urlsRecolectadas.push_back(url);
     }
 
     GumboVector* hijos = &nodo->v.element.children;
     for (int i = 0; i < hijos->length; i++){
-        if (colaPrioridad.getLongitud() + urlsRecolectadas.size() >= MAX_PAGINAS)
+        if (!usarProfundidad && (colaPrioridad.getLongitud() + urlsRecolectadas.size() >= limitePaginas)) 
             break;
             
         extraerEtiquetas(static_cast<GumboNode*>(hijos->data[i]), urlsRecolectadas);
@@ -109,6 +134,13 @@ void Peticion::guardarInformacion(){
         std::cout<<"bien"<<endl;
 }   
 
+void Peticion::configurar(bool profundidad, int limite){
+    this->usarProfundidad = profundidad;
+    if (profundidad)
+        this->nivelProfundidad = limite;
+    else
+        this->limitePaginas = limite;
+}
 
 void Peticion::leerInformacion(){
     gestorFicheros.leerCola(colaPrioridad);
@@ -132,39 +164,42 @@ bool Peticion::buscarPalabra(string palabraClave){
     bool algunEncontrado = false;
 
     colaPrioridad.recorrerCola([&](string url, int prioridad, string padre, int nivel) -> bool {
+        
         if (url.find(palabraClave) != std::string::npos) {
-            std::cout << "\n========================================" << std::endl;
-            std::cout << "¡PALABRA ENCONTRADA EN NIVEL " << nivel << "!" << std::endl;
+            std::cout << "\n=== ¡COINCIDENCIA ENCONTRADA! ===" << std::endl;
             std::cout << "URL: " << url << std::endl;
-            
+            std::cout << "Nivel de profundidad: " << nivel << std::endl;
             vector<string> camino;
-            string actual = url;
+            camino.push_back(url);
             string padreActual = padre;
 
-            camino.push_back(actual);
             while (padreActual != "Inicio" && !padreActual.empty()) {
                 camino.push_back(padreActual);
-                actual = padreActual;
-                padreActual = obtenerPadre(actual);
+
+                string abuelo = "";
+                colaPrioridad.recorrerCola([&](string u, int p, string pa, int n) -> bool {
+                    if (u == padreActual) {
+                        abuelo = pa;
+                        return true;
+                    }
+                    return false;
+                });
+                padreActual = abuelo; 
             }
 
-            std::cout << "\n--- Ruta de Navegación (Backtracking) ---" << std::endl;
-            std::cout << "Cantidad de Clicks necesarios: " << (camino.size() - 1) << std::endl;
+            std::cout << "\n--- Ruta de Clicks ---" << std::endl;
+            std::cout << "Pasos necesarios: " << camino.size() << std::endl;
             
-            int paso = 0;
             for (int i = camino.size() - 1; i >= 0; i--) {
-                if (i == camino.size() - 1) 
-                    std::cout << "[Inicio] " << camino[i] << std::endl;
-                else {
-                    std::cout << "    | " << std::endl;
-                    std::cout << "    L-> (Click " << ++paso << ") " << camino[i] << std::endl;
-                }
+                std::cout << "[" << (camino.size() - 1 - i) << "] " << camino[i] << std::endl;
+                if (i > 0) std::cout << "  |\n  V" << std::endl;
             }
-            std::cout << "========================================\n" << std::endl;
+            std::cout << "===============================\n" << std::endl;
             
             algunEncontrado = true;
             return true;
         }
+        
         return false; 
     });
 
