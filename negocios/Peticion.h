@@ -21,6 +21,7 @@ class Peticion{
         Fichero gestorFicheros;
     public:
         Peticion();
+        string obtenerListado();
         void reset();
         void configurar(bool profundidad, int limite);
         int realizarPeticion(string url);

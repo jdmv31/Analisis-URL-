@@ -264,6 +264,20 @@ void Peticion::calcularMetricas(){
     std::cout << "Cantidad de paginas visitadas: "<<colaPrioridad.getLongitud()<<std::endl;
 }
 
+//agregado por nicole
+string Peticion::obtenerListado() {
+    string resultado = "";
+    int contador = 1;
+    
+    colaPrioridad.recorrerCola([&](string url, int prioridad, string padre, int nivel) -> bool {
+        resultado += to_string(contador) + ". [Prio: " + to_string(prioridad) + "] " + url + "\n";
+        contador++;
+        return false; // Retornar false para seguir recorriendo
+    });
+    
+    return resultado;
+}
+
 
 bool Peticion::datosCola(){
     return colaPrioridad.colaVacia();
