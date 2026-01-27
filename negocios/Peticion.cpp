@@ -38,6 +38,7 @@ int Peticion::getCantNodos(){
 
 
 int Peticion::realizarPeticion(string url) {
+    colaPrioridad.insertarUrl(url,url.length(),"Inicio",0);
     auto r = cpr::Get(
         cpr::Url{static_cast<string_view>(url)},
         cpr::Authentication{"user", "pass", cpr::AuthMode::BASIC},
@@ -52,22 +53,22 @@ int Peticion::realizarPeticion(string url) {
 
     string html = static_cast<string>(r.text);
     urlSolicitada = url;
-    parsearHtml(html);
+    parsearHtml(html,url,0);
     return 200;
 }
 
-void Peticion::parsearHtml (string html){
+void Peticion::parsearHtml (string html,string urlPadre, int nivel){
     GumboOutput* salida = gumbo_parse(html.c_str());
     vector<string> urlsRecolectadas;
     extraerEtiquetas(salida->root,urlsRecolectadas);
-    procesarLinks(urlsRecolectadas);
+    procesarLinks(urlsRecolectadas,urlPadre,nivel);
     gumbo_destroy_output(&kGumboDefaultOptions, salida);
 }
 
-void Peticion::procesarLinks(vector<string> urlsRecolectadas){
+void Peticion::procesarLinks(vector<string> urlsRecolectadas, string urlPadre, int nivel){
     for (const string& url : urlsRecolectadas){
         int prioridad = url.length();
-        colaPrioridad.insertarUrl(url, prioridad);
+        colaPrioridad.insertarUrl(url, prioridad, urlPadre,nivel);
     }
 }
 
@@ -113,23 +114,57 @@ void Peticion::leerInformacion(){
     gestorFicheros.leerCola(colaPrioridad);
 }
 
+string Peticion::obtenerPadre(string urlHija){
+    string urlPadre = "";
+
+    colaPrioridad.recorrerCola([&](string url, int p, string padre, int n) -> bool {
+        if (url == urlHija) {
+            urlPadre = padre;
+            return true; 
+        }
+        return false; 
+    });
+    return urlPadre;
+}
+
 
 bool Peticion::buscarPalabra(string palabraClave){
     bool algunEncontrado = false;
 
-    colaPrioridad.recorrerCola([&](string url, int prioridad) -> bool {
+    colaPrioridad.recorrerCola([&](string url, int prioridad, string padre, int nivel) -> bool {
         if (url.find(palabraClave) != std::string::npos) {
-            std::cout << "\n=== ¡COINCIDENCIA EN LA URL! ===" << std::endl;
-            std::cout << "Ruta de navegacion para llegar al objetivo:" << std::endl;
-            std::cout << "1. Ingresar a: " << gestorFicheros.getPadre() << std::endl;
-            std::cout << "2. Clickear en:  " << url << std::endl;                  
+            std::cout << "\n========================================" << std::endl;
+            std::cout << "¡PALABRA ENCONTRADA EN NIVEL " << nivel << "!" << std::endl;
+            std::cout << "URL: " << url << std::endl;
             
-            std::cout << "\n(Prioridad del enlace: " << prioridad << ")" << std::endl;
+            vector<string> camino;
+            string actual = url;
+            string padreActual = padre;
+
+            camino.push_back(actual);
+            while (padreActual != "Inicio" && !padreActual.empty()) {
+                camino.push_back(padreActual);
+                actual = padreActual;
+                padreActual = obtenerPadre(actual);
+            }
+
+            std::cout << "\n--- Ruta de Navegación (Backtracking) ---" << std::endl;
+            std::cout << "Cantidad de Clicks necesarios: " << (camino.size() - 1) << std::endl;
+            
+            int paso = 0;
+            for (int i = camino.size() - 1; i >= 0; i--) {
+                if (i == camino.size() - 1) 
+                    std::cout << "[Inicio] " << camino[i] << std::endl;
+                else {
+                    std::cout << "    | " << std::endl;
+                    std::cout << "    L-> (Click " << ++paso << ") " << camino[i] << std::endl;
+                }
+            }
+            std::cout << "========================================\n" << std::endl;
             
             algunEncontrado = true;
             return true;
         }
-        
         return false; 
     });
 
@@ -170,7 +205,7 @@ void Peticion::calcularMetricas(){
     paginasHuerfanas = 0;
     int totalLinks = 0;
     promedioLinks = 0;
-    colaPrioridad.recorrerCola([&](string url, int prioridad) -> bool {
+    colaPrioridad.recorrerCola([&](string url, int prioridad, string padre, int nivel) -> bool {
         cpr::Response r = cpr::Get(cpr::Url{url});
 
         if (r.status_code == 404 || r.status_code == 403 || r.status_code == 0)

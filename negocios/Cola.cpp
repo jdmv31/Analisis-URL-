@@ -23,17 +23,19 @@ int Cola::getLongitud(){
     return longitud;
 }
 
-Nodo* Cola::crearNodo(string url, int prioridad){
+Nodo* Cola::crearNodo(string url, int prioridad, string urlPadre, int nivel){
     Nodo* nuevonodo;
     nuevonodo = new Nodo();
     nuevonodo->url = url;
     nuevonodo->prioridad = prioridad;
+    nuevonodo->urlPadre = urlPadre;
+    nuevonodo->nivel = nivel;
     nuevonodo->siguiente = nullptr;
     return nuevonodo;
 }
 
-void Cola::insertarUrl(string url, int prioridad){
-    Nodo* nuevonodo = crearNodo(url,prioridad);
+void Cola::insertarUrl(string url, int prioridad, string urlPadre, int nivel){
+    Nodo* nuevonodo = crearNodo(url,prioridad,urlPadre,nivel);
 
     if (frente == nullptr || prioridad > frente->prioridad){
         nuevonodo->siguiente = frente;
@@ -55,15 +57,15 @@ void Cola::insertarUrl(string url, int prioridad){
 void Cola::copiarDatos(vector<vectorAux>& lista){
     Nodo *nuevonodo = frente;
     while (nuevonodo != nullptr){
-        lista.push_back({nuevonodo->url,nuevonodo->prioridad});
+        lista.push_back({nuevonodo->url, nuevonodo->urlPadre, nuevonodo->nivel, nuevonodo->prioridad});
         nuevonodo = nuevonodo->siguiente;
     }
 }
 
-void Cola::recorrerCola(std::function<bool(string,int)> accion){
+void Cola::recorrerCola(std::function<bool(string,int,string,int)> accion){
     Nodo* actual = frente;
     while (actual != nullptr){
-        if (accion(actual->url, actual->prioridad))
+        if (accion(actual->url, actual->prioridad,actual->urlPadre,actual->nivel))
             return;         
         actual = actual->siguiente;
     }

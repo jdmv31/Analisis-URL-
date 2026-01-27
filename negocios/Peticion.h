@@ -11,7 +11,7 @@ using namespace std;
 class Peticion{
     private:
         string urlSolicitada;
-        const int MAX_PAGINAS = 25;
+        const int MAX_PAGINAS = 40;
         int paginasHuerfanas;
         float promedioLinks;
         int cantImagenes;
@@ -24,16 +24,17 @@ class Peticion{
         int getPromedioLinks();
         int getPaginasHuerfanas();
         int getCantNodos();
-        void parsearHtml (string html);
+        void parsearHtml (string html,string urlPadre, int nivel);
         void extraerEtiquetas(GumboNode* nodo,vector<string>& urlsRecolectadas);
         void guardarInformacion();
         void leerInformacion();
-        void procesarLinks(vector<string> urlsRecolectadas);
+        void procesarLinks(vector<string> urlsRecolectadas, string urlPadre, int nivel);
         bool buscarPalabra(string palabraClave);
         void calcularMetricas();
         int contarImagenes(GumboNode* nodo);
         int contarLinks(GumboNode* nodo);
         bool datosCola();
+        string obtenerPadre(string urlHija);
         /*
             metricas estructurales: 
             cantidad de paginas huerfanas: las que no se puede acceder

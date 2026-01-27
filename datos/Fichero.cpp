@@ -121,10 +121,17 @@ bool Fichero::guardarCola(Cola &colaPrioridad){
     archivo.write(reinterpret_cast<char*>(&elementos),sizeof(size_t));
 
     for (auto& item: aux){
-        archivo.write(reinterpret_cast<char*>(&item.prioridad),sizeof(int));
-        size_t url = item.url.size();
-        archivo.write(reinterpret_cast<char*>(&url),sizeof(size_t));
-        archivo.write(item.url.c_str(),url);
+        archivo.write(reinterpret_cast<char*>(&item.prioridad), sizeof(int));
+
+        size_t tamUrl = item.url.size();
+        archivo.write(reinterpret_cast<char*>(&tamUrl), sizeof(size_t));
+        archivo.write(item.url.c_str(), tamUrl);
+
+        size_t tamPadre = item.urlPadre.size();
+        archivo.write(reinterpret_cast<char*>(&tamPadre), sizeof(size_t));
+        archivo.write(item.urlPadre.c_str(), tamPadre);
+
+        archivo.write(reinterpret_cast<char*>(&item.nivel), sizeof(int));
     }
     archivo.close();
     return true;
@@ -146,14 +153,21 @@ bool Fichero::leerCola(Cola &colaPrioridad){
     archivo.read(reinterpret_cast<char*>(&elementos),sizeof(size_t));
     for (int i = 0; i < elementos; i++){
         vectorAux item;
-        archivo.read(reinterpret_cast<char*>(&item.prioridad),sizeof(int));
-        size_t url = 0;
-        archivo.read(reinterpret_cast<char*>(&url),sizeof(size_t));
-        item.url.resize(url);
-        archivo.read(&item.url[0],url);
-        colaPrioridad.insertarUrl(item.url,item.prioridad);
+        archivo.read(reinterpret_cast<char*>(&item.prioridad), sizeof(int));
+
+        size_t tamUrl = 0;
+        archivo.read(reinterpret_cast<char*>(&tamUrl), sizeof(size_t));
+        item.url.resize(tamUrl);
+        archivo.read(&item.url[0], tamUrl);
+
+        size_t tamPadre = 0;
+        archivo.read(reinterpret_cast<char*>(&tamPadre), sizeof(size_t));
+        item.urlPadre.resize(tamPadre);
+        archivo.read(&item.urlPadre[0], tamPadre);
+
+        archivo.read(reinterpret_cast<char*>(&item.nivel), sizeof(int));
+
+        colaPrioridad.insertarUrl(item.url, item.prioridad, item.urlPadre, item.nivel);
     }
-
-
     return true;
 }

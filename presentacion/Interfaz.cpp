@@ -131,9 +131,10 @@ void VistaBusqueda::on_buscar_clicked() {
     bool encontrado = false;
     if (!url.empty()){
         int estado = peticion.realizarPeticion(url);
-        if (estado == 200)
+        if (estado == 200){
             if(!peticion.buscarPalabra(palabra));
                 std::cout<<"no";
+        }        
     }
 
 }
