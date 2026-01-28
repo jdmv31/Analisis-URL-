@@ -18,7 +18,7 @@ Peticion::Peticion(){
     paginasHuerfanas = 0;
     promedioLinks = 0;
     cantImagenes = 0;
-    limitePaginas = 25;
+    limitePaginas = 100;
     nivelProfundidad = 3;
     usarProfundidad = false;
     // c++ automaticamente usa el constructor del objeto cola, no es necesario especificar
@@ -61,27 +61,54 @@ int Peticion::getCantNodos(){
 }
 
 
-int Peticion::realizarPeticion(string url) {
-    reset();
-    if (url.find("http") != 0) {
-        url = "http://" + url;
-    }
-    colaPrioridad.insertarUrl(url,url.length(),"Inicio",0);
+void Peticion::procesarUrl(string url, int nivelActual) {
+    if (usarProfundidad && nivelActual > nivelProfundidad) return;
+
+    if (paginasVisitadas.find(url) != paginasVisitadas.end()) return;
+    paginasVisitadas.insert(url);
+
+    string padre = (nivelActual == 0) ? "Inicio" : obtenerPadre(url); 
+
     auto r = cpr::Get(
         cpr::Url{static_cast<string_view>(url)},
         cpr::Authentication{"user", "pass", cpr::AuthMode::BASIC},
         cpr::Parameters{{"anon", "true"}, {"key", "value"}}
     );
 
-    if (r.status_code == 0)
-        return 0;
+    if (r.status_code == 200) {
+        string html = static_cast<string>(r.text);
 
-    if (r.status_code >= 400)
-        return 400;
+        if (nivelActual == 0) urlSolicitada = url;
+        parsearHtml(html, url, nivelActual); 
+    }
+}
+
+
+int Peticion::realizarPeticion(string url) {
+    reset();
+    paginasVisitadas.clear();
+
+    if (url.find("http") != 0) {
+        url = "http://" + url;
+    }
+
+    auto r = cpr::Get(
+        cpr::Url{static_cast<string_view>(url)},
+        cpr::Authentication{"user", "pass", cpr::AuthMode::BASIC},
+        cpr::Parameters{{"anon", "true"}, {"key", "value"}}
+    );
+
+    if (r.status_code == 0) return 0;
+    if (r.status_code >= 400) return r.status_code; 
+
+    urlSolicitada = url;
+    paginasVisitadas.insert(url);
+    
+    colaPrioridad.insertarUrl(url, url.length(), "Inicio", 0);
 
     string html = static_cast<string>(r.text);
-    urlSolicitada = url;
-    parsearHtml(html,url,0);
+    parsearHtml(html, url, 0);
+
     return 200;
 }
 
@@ -101,29 +128,45 @@ void Peticion::parsearHtml (string html,string urlPadre, int nivel){
     gumbo_destroy_output(&kGumboDefaultOptions, salida);
 }
 
+void Peticion::procesarUrlRecursivo(string url, int nivelActual) {
+    if (colaPrioridad.getLongitud() >= limitePaginas) return;
+    if (paginasVisitadas.find(url) != paginasVisitadas.end()) return;
+
+    paginasVisitadas.insert(url);
+
+    auto r = cpr::Get(cpr::Url{static_cast<string_view>(url)});
+    
+    if (r.status_code == 200) {
+        parsearHtml(r.text, url, nivelActual);
+    }
+}
+
 void Peticion::procesarLinks(vector<string> urlsRecolectadas, string urlPadre, int nivelPadre){
     int nuevoNivel = nivelPadre + 1;
 
     for (const string& url : urlsRecolectadas){
+        if (colaPrioridad.getLongitud() >= limitePaginas) return;
+
         bool insertar = false;
 
         if (usarProfundidad) {
-            if (nuevoNivel <= nivelProfundidad)
-                insertar = true;
+            if (nuevoNivel <= nivelProfundidad) insertar = true;
         } else {
-            if (colaPrioridad.getLongitud() < limitePaginas)
-                insertar = true;
+            insertar = true;
         }
 
-        if (insertar) {
+        if (insertar && paginasVisitadas.find(url) == paginasVisitadas.end()) {
             int prioridad = url.length();
             colaPrioridad.insertarUrl(url, prioridad, urlPadre, nuevoNivel);
+            
+            if (usarProfundidad && nuevoNivel < nivelProfundidad) {
+                procesarUrlRecursivo(url, nuevoNivel);
+            }
         }
     }
 }
 
 void Peticion::extraerEtiquetas(GumboNode* nodo, vector<string>& urlsRecolectadas){
-    // Bloque 1: Validación inicial (ESTE ESTABA BIEN)
     if (!usarProfundidad) {
         int totalActual = colaPrioridad.getLongitud() + urlsRecolectadas.size();
         if (totalActual >= limitePaginas) return;
@@ -153,7 +196,6 @@ void Peticion::extraerEtiquetas(GumboNode* nodo, vector<string>& urlsRecolectada
 
     GumboVector* hijos = &nodo->v.element.children;
     for (int i = 0; i < hijos->length; i++){
-        // Bloque 3: Validación recursiva (ESTE ESTABA BIEN)
         if (!usarProfundidad && (colaPrioridad.getLongitud() + urlsRecolectadas.size() >= limitePaginas)) 
             break;
             
@@ -306,7 +348,7 @@ string Peticion::obtenerListado() {
     int contador = 1;
     
     colaPrioridad.recorrerCola([&](string url, int prioridad, string padre, int nivel) -> bool {
-        resultado += to_string(contador) + ". " + url + "\n";
+        resultado += to_string(contador) + ". " + url + " Nivel: " + to_string(nivel) + "\n";
         contador++;
         return false; // Retornar false para seguir recorriendo
     });
