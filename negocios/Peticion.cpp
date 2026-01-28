@@ -37,10 +37,11 @@ float Peticion::getPromedioLinks(){
     return promedioLinks;
 }
 
+//Calcula los accesos fallidos 
 int Peticion::getPaginasHuerfanas(){
     return paginasHuerfanas;
 }
-
+// Extrae el dominio principal de una URL
 string Peticion::extraerDominio(string url) {
     string dominio = url;
 
@@ -88,7 +89,7 @@ void Peticion::procesarUrl(string url, int nivelActual) {
     }
 }
 
-
+//Nucleo principal de la clase, realiza la peticion HTTP y gestiona la respuesta (ya sea cogiod de error de red 400/500 y marca como huerfanas si la conexion falla)
 int Peticion::realizarPeticion(string url) {
     reset();
     paginasVisitadas.clear();
@@ -190,6 +191,8 @@ void Peticion::procesarLinks(vector<string> urlsRecolectadas, string urlPadre, i
     }
 }
 
+/*Filtrado que analiza el Arobol en busca de enlaces
+ Convierte rutas relativas en absolutos usando el dominio base*/
 void Peticion::extraerEtiquetas(GumboNode* nodo, vector<string>& urlsRecolectadas){
     if (!usarProfundidad) {
         int totalActual = colaPrioridad.getLongitud() + urlsRecolectadas.size();
@@ -279,7 +282,7 @@ string Peticion::obtenerPadre(string urlHija){
     });
     return urlPadre;
 }
-
+//Busqueda exhaustiva en la la memoria de las urls almacenadas
 bool Peticion::buscarPalabra(string palabraClave){
     bool algunEncontrado = false;
     rutaEncontrada = "";
@@ -356,7 +359,8 @@ int Peticion::contarLinks(GumboNode* nodo){
     return cont; 
 }   
 
-
+/*Calcula el elemento de union del sitio del dividiendo el total de enlaces hallados
+ entre el numero de paginas analizadas con exito */
 void Peticion::calcularMetricas(){
     promedioLinks = (colaPrioridad.getLongitud() > 0) 
                     ? (float)totalEnlaces / colaPrioridad.getLongitud() : 0;

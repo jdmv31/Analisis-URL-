@@ -10,6 +10,7 @@ Cola::Cola(){
 }
 
 Cola::~Cola(){
+     // Liberar memoria al recorrer la lista y eliminar los individualmente hasta vaciar la memoria
     while (frente != nullptr){
         Nodo* actual = frente;
         frente = frente->siguiente;
@@ -34,6 +35,7 @@ Nodo* Cola::crearNodo(string url, int prioridad, string urlPadre, int nivel){
     return nuevonodo;
 }
 
+//compara la prioridad de la nueva URL y ubica en la posicion correcta
 void Cola::insertarUrl(string url, int prioridad, string urlPadre, int nivel){
     Nodo* nuevonodo = crearNodo(url,prioridad,urlPadre,nivel);
 
@@ -54,6 +56,7 @@ void Cola::insertarUrl(string url, int prioridad, string urlPadre, int nivel){
     longitud++;
 }
 
+//Puente que covierte los nodos de lista en vector para facilitar el guardado de los .bin
 void Cola::copiarDatos(vector<vectorAux>& lista){
     Nodo *nuevonodo = frente;
     while (nuevonodo != nullptr){
