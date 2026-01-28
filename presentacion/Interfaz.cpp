@@ -118,8 +118,22 @@ void VistaRecopilacion::on_analizar_clicked() {
     string textoLimite = m_EntryLimite.get_text();
     m_LblError.set_markup(""); 
 
+    // 1. Validar URL vacía
     if (url.empty()) {
         m_LblError.set_markup("<span color='#FF5555' weight='bold'>ADVERTENCIA: Debe ingresar una URL.</span>");
+        return;
+    }
+
+    // 2. Validar Límite vacío (NUEVO: Esto es lo que faltaba)
+    if (textoLimite.empty()) {
+        m_LblError.set_markup("<span color='#FF5555' weight='bold'>ADVERTENCIA: Debe ingresar un límite (Profundidad o Páginas).</span>");
+        return;
+    }
+
+    // 3. Validar que el límite sean solo números (Evita que el programa falle o use defaults erróneos)
+    // Nota: Necesitas incluir <algorithm> y <cctype> si no están
+    if (!std::all_of(textoLimite.begin(), textoLimite.end(), ::isdigit)) {
+        m_LblError.set_markup("<span color='#FF5555' weight='bold'>ADVERTENCIA: El límite debe ser un número entero válido.</span>");
         return;
     }
 
@@ -127,9 +141,11 @@ void VistaRecopilacion::on_analizar_clicked() {
     try {
         valorLimite = std::stoi(textoLimite);
     } catch (...) {
-        valorLimite = 25;
+        m_LblError.set_markup("<span color='#FF5555' weight='bold'>ERROR: El número ingresado no es válido.</span>");
+        return;
     }
 
+    // --- A PARTIR DE AQUÍ SIGUE TU LÓGICA DE RANGOS ---
     bool esProfundidad = m_RadioProfundidad.get_active();
     bool huboAjuste = false;
 
@@ -141,7 +157,7 @@ void VistaRecopilacion::on_analizar_clicked() {
             if (valorLimite < MIN_PROF) valorLimite = MIN_PROF;
             if (valorLimite > MAX_PROF) valorLimite = MAX_PROF;
 
-            m_LblError.set_markup("<span color='#FF5555' weight='bold'>NOTA: Profundidad ajustada a " 
+            m_LblError.set_markup("<span color='#e6a00f' weight='bold'>NOTA: Profundidad ajustada a " 
                                   + std::to_string(valorLimite) + " (Rango permitido: 1-5).</span>");
             huboAjuste = true;
         }
@@ -153,15 +169,15 @@ void VistaRecopilacion::on_analizar_clicked() {
             if (valorLimite < MIN_PAGS) valorLimite = MIN_PAGS;
             if (valorLimite > MAX_PAGS) valorLimite = MAX_PAGS;
 
-            m_LblError.set_markup("<span color='#FF5555' weight='bold'>NOTA: Cantidad de páginas ajustada a " 
+            m_LblError.set_markup("<span color='#e6a00f' weight='bold'>NOTA: Cantidad de páginas ajustada a " 
                                   + std::to_string(valorLimite) + " (Rango permitido: 25-50).</span>");
             huboAjuste = true;
         }
     }
+    
     peticion.configurar(esProfundidad, valorLimite);
-
     auto procesarYMostrar = [this, url]() {
-        m_LblError.set_markup(""); 
+        // m_LblError.set_markup(""); 
 
         int estado = peticion.realizarPeticion(url);
         if (estado == 200) {
@@ -170,6 +186,11 @@ void VistaRecopilacion::on_analizar_clicked() {
             auto buffer = m_TxtInfoContenido.get_buffer();
             buffer->set_text("Análisis completado exitosamente.\nDatos listos para guardar.");
             
+            peticion.calcularMetricas(); 
+            
+            // ---> AQUÍ: Nos aseguramos de que el botón "Guardar" sea visible de nuevo <---
+            m_BtnGuardar.set_visible(true); 
+            
             m_CenterBox.set_center_widget(m_CardBoxResultados);
         } else {
             m_LblError.set_markup("<span color='#FF5555' weight='bold'>ERROR DE CONEXIÓN: Código " + std::to_string(estado) + ".\nVerifique la URL o su conexión a internet.</span>");
@@ -177,14 +198,17 @@ void VistaRecopilacion::on_analizar_clicked() {
     };
 
     if (huboAjuste) {
+        // Si hubo ajuste, esperamos 2 segundos para que el usuario lea la nota antes de cambiar de pantalla
         Glib::signal_timeout().connect_once(procesarYMostrar, 2000);
     } else {
         procesarYMostrar();
     }
-    peticion.calcularMetricas();
 }
 
 void VistaRecopilacion::on_guardar_clicked() {
+    // 1. Ocultamos el botón inmediatamente
+    m_BtnGuardar.set_visible(false); 
+
     peticion.guardarInformacion();
     auto buffer = m_TxtInfoContenido.get_buffer();
     buffer->set_text("Datos almacenados correctamente en memoria.");
@@ -194,7 +218,7 @@ void VistaRecopilacion::on_guardar_clicked() {
         m_CenterBox.set_center_widget(m_CardBox);
         m_notebook.set_current_page(0);
 
-    }, 1500);
+    }, 3000);
 }
 
 void VistaRecopilacion::on_cancelar_resultados_clicked() {
