@@ -5,7 +5,9 @@
 #include <datos/Fichero.h>
 #include <vector>
 #include <sstream>
+#include <set>
 
+using std::set;
 using std::vector;
 using namespace std;
 
@@ -21,6 +23,7 @@ class Peticion{
         Cola colaPrioridad;
         Fichero gestorFicheros;
         string rutaEncontrada;
+        set<string> paginasVisitadas;
     public:
         Peticion();
         string obtenerListado();
@@ -44,6 +47,8 @@ class Peticion{
         string obtenerPadre(string urlHija);
         string obtenerRuta();
         string extraerDominio(string url);
+        void procesarUrl(string url, int nivelActual);
+        void procesarUrlRecursivo(string url, int nivelActual);
         /*
             metricas estructurales: 
             cantidad de paginas huerfanas: las que no se puede acceder
