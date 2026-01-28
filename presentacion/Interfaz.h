@@ -66,7 +66,7 @@ protected:
 };
 
 // =========================================================
-// 3. CLASE VISTA ANÁLISIS
+// 3. CLASE VISTA ANÁLISIS (MODIFICADA)
 // =========================================================
 class VistaAnalisis : public Gtk::Box {
 public:
@@ -81,9 +81,9 @@ protected:
 
     // --- VISTA 1: INPUT ---
     Gtk::Box m_CardBox;
-    Gtk::Label m_LblTitulo, m_LblInstruccion;
+    Gtk::Label m_LblTitulo, m_LblInfo; // Agregamos m_LblInfo
     Gtk::Label m_LblError; 
-    Gtk::Entry m_EntryUrl; 
+    // Eliminamos m_EntryUrl
     Gtk::Button m_BtnAnalizar, m_BtnVolver;
 
     // --- VISTA 2: RESULTADOS ---
@@ -111,6 +111,7 @@ protected:
     Gtk::Box m_CardBox;
     Gtk::Label m_LblTitulo, m_LblInfo;
     Gtk::Button m_BtnMostrar, m_BtnVolver;
+    Gtk::Label m_LblError;
 
     // --- VISTA 2: LISTA DE ENLACES ---
     Gtk::Box m_CardBoxResultados;

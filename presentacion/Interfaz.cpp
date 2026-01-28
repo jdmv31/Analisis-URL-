@@ -62,9 +62,9 @@ VistaRecopilacion::VistaRecopilacion(Gtk::Notebook& notebook)
     m_CardBox.append(m_EntryUrl);
     m_CardBox.append(m_RadioBox);    // Agregado
     m_CardBox.append(m_EntryLimite); // Agregado
-    m_CardBox.append(m_LblError);    // Tu label de error
     m_CardBox.append(m_BtnAnalizar);
     m_CardBox.append(m_BtnVolver);
+    m_CardBox.append(m_LblError);    
 
     // --- VISTA 2: RESULTADOS ---
     m_CardBoxResultados.add_css_class("menu-card");
@@ -249,11 +249,11 @@ VistaBusqueda::VistaBusqueda(Gtk::Notebook& notebook)
     m_CardBox.append(m_EntryKeyword); // Palabra
     m_CardBox.append(m_LblUrl);
     m_CardBox.append(m_EntryUrl);     // URL
-    m_CardBox.append(m_EntryLimite);  // Limite (Él)
-    m_CardBox.append(m_RadioBox);     // Radios (Él)
-    m_CardBox.append(m_LblError);     // Error (Tú)
+    m_CardBox.append(m_EntryLimite);  // Limite 
+    m_CardBox.append(m_RadioBox);     // Radios 
     m_CardBox.append(m_BtnBuscar);
     m_CardBox.append(m_BtnVolver);
+    m_CardBox.append(m_LblError);   // Error 
 
     // Vista Resultados
     m_CardBoxResultados.add_css_class("menu-card");
@@ -374,7 +374,7 @@ void VistaBusqueda::on_buscar_clicked() {
 
 
 // =========================================================
-// 3. IMPLEMENTACIÓN VISTA ANÁLISIS (SIN CAMBIOS MAYORES)
+// 3. IMPLEMENTACIÓN VISTA ANÁLISIS (MODIFICADA)
 // =========================================================
 VistaAnalisis::VistaAnalisis(Gtk::Notebook& notebook) 
     : Gtk::Box(Gtk::Orientation::VERTICAL), m_notebook(notebook) 
@@ -390,12 +390,8 @@ VistaAnalisis::VistaAnalisis(Gtk::Notebook& notebook)
     m_LblTitulo.set_text("Análisis Estructural");
     m_LblTitulo.add_css_class("titulo-label");
 
-    m_LblInstruccion.set_markup("<span size='x-large' weight='bold'>URL para analizar:</span>");
-    m_LblInstruccion.add_css_class("texto-instruccion");
-
-    m_EntryUrl.set_placeholder_text("https://sitio.com");
-    m_EntryUrl.add_css_class("entry-url");
-    m_EntryUrl.set_size_request(400, -1);
+    m_LblInfo.set_markup("<span size='x-large' weight='bold'>Visualizar métricas</span>");
+    m_LblInfo.add_css_class("texto-instruccion");
 
     m_LblError.set_markup(""); 
     m_LblError.set_wrap(true);
@@ -405,12 +401,11 @@ VistaAnalisis::VistaAnalisis(Gtk::Notebook& notebook)
     m_BtnVolver.add_css_class("btn-salir");
 
     m_CardBox.append(m_LblTitulo);
-    m_CardBox.append(m_LblInstruccion);
-    m_CardBox.append(m_EntryUrl);
-    m_CardBox.append(m_LblError);
+    m_CardBox.append(m_LblInfo); // Añadido
     m_CardBox.append(m_BtnAnalizar);
     m_CardBox.append(m_BtnVolver);
-
+    m_CardBox.append(m_LblError);
+    
     // ================== VISTA 2: RESULTADOS (REPORTE) ==================
     m_CardBoxResultados.add_css_class("menu-card");
     m_CardBoxResultados.set_orientation(Gtk::Orientation::VERTICAL);
@@ -438,7 +433,6 @@ VistaAnalisis::VistaAnalisis(Gtk::Notebook& notebook)
     m_CardBoxResultados.append(m_LblVisitadas);
     m_CardBoxResultados.append(m_BtnCerrarResultado);
 
-
     m_CenterBox.set_center_widget(m_CardBox);
     append(m_CenterBox);
 
@@ -448,33 +442,17 @@ VistaAnalisis::VistaAnalisis(Gtk::Notebook& notebook)
     m_BtnCerrarResultado.signal_clicked().connect(sigc::mem_fun(*this, &VistaAnalisis::on_cerrar_resultados_clicked));
 }
 
-void VistaAnalisis::on_volver_clicked() { 
-    m_LblError.set_markup(""); 
-    m_notebook.set_current_page(0); 
-}
-
-void VistaAnalisis::on_cerrar_resultados_clicked() {
-    m_EntryUrl.set_text(""); // Limpiamos para nueva consulta
-    m_CenterBox.set_center_widget(m_CardBox);
-}
-
 void VistaAnalisis::on_analizar_clicked() { 
-    string url = m_EntryUrl.get_text();
     m_LblError.set_markup(""); 
 
-    // 1. Validaciones
-    if (url.empty()) {
-        m_LblError.set_markup("<span color='#FF5555' weight='bold'>ADVERTENCIA: Debe ingresar una URL para analizar.</span>");
-        return;
-    }
-    int estado = peticion.realizarPeticion(url);
-    if (estado != 200) {
-        m_LblError.set_markup("<span color='#FF5555' weight='bold'>ERROR: No se puede acceder a la URL (Código " + std::to_string(estado) + ").</span>");
+    // Nota: Asumimos que datosCola() devuelve true si la cola ESTÁ VACÍA (basado en tu código de VistaEnlaces)
+    if (peticion.datosCola()) {
+        m_LblError.set_markup("<span color='#FF5555' weight='bold'>COLA VACIA SIN METRICAS QUE ENSENAR</span>");
         return;
     }
 
-    // 2. Si todo OK, calculamos métricas y mostramos resultados
-    std::cout << "Analizando Estructura de: " << url << std::endl; 
+    // Si hay datos, calculamos y mostramos
+    std::cout << "Calculando métricas de datos en memoria..." << std::endl; 
     
     peticion.calcularMetricas();
 
@@ -488,6 +466,15 @@ void VistaAnalisis::on_analizar_clicked() {
     m_CenterBox.set_center_widget(m_CardBoxResultados);
 }
 
+// Asegúrate de modificar también el on_cerrar para no llamar a m_EntryUrl
+void VistaAnalisis::on_cerrar_resultados_clicked() {
+    m_CenterBox.set_center_widget(m_CardBox);
+}
+
+void VistaAnalisis::on_volver_clicked() { 
+    m_LblError.set_markup(""); 
+    m_notebook.set_current_page(0); 
+}
 
 // =========================================================
 // 4. IMPLEMENTACIÓN VISTA ENLACES (MANTENIDA TU VERSION)
@@ -498,7 +485,7 @@ VistaEnlaces::VistaEnlaces(Gtk::Notebook& notebook)
     // --- VISTA 1: MENÚ INICIAL ---
     m_CardBox.add_css_class("menu-card");
     m_CardBox.set_orientation(Gtk::Orientation::VERTICAL);
-    m_CardBox.set_spacing(15);
+    m_CardBox.set_spacing(5);
     m_CardBox.set_margin(50);
     m_CardBox.set_valign(Gtk::Align::CENTER);
     m_CardBox.set_halign(Gtk::Align::CENTER);
@@ -509,6 +496,9 @@ VistaEnlaces::VistaEnlaces(Gtk::Notebook& notebook)
     m_LblInfo.set_markup("<span size='x-large' weight='bold'>Visualizar base de datos</span>");
     m_LblInfo.add_css_class("texto-instruccion");
 
+    m_LblError.set_markup(""); 
+    m_LblError.set_wrap(true);
+
     m_BtnMostrar.set_label("Cargar Lista");
     m_BtnVolver.set_label("Volver al Menú");
     m_BtnVolver.add_css_class("btn-salir");
@@ -516,7 +506,8 @@ VistaEnlaces::VistaEnlaces(Gtk::Notebook& notebook)
     m_CardBox.append(m_LblTitulo);
     m_CardBox.append(m_LblInfo);
     m_CardBox.append(m_BtnMostrar);
-    m_CardBox.append(m_BtnVolver);
+    m_CardBox.append(m_BtnVolver); 
+    m_CardBox.append(m_LblError); 
 
     // --- VISTA 2: RESULTADOS (LISTA) ---
     m_CardBoxResultados.add_css_class("menu-card");
@@ -531,13 +522,13 @@ VistaEnlaces::VistaEnlaces(Gtk::Notebook& notebook)
 
     // Configurar área de texto (Read-Only)
     m_TxtResContenido.set_editable(false);
-    m_TxtResContenido.set_monospace(true); // Fuente monoespaciada para mejor orden
+    m_TxtResContenido.set_monospace(true);
     m_TxtResContenido.set_wrap_mode(Gtk::WrapMode::WORD);
     m_TxtResContenido.add_css_class("entry-url"); 
 
     // Configurar Scroll
     m_ScrollRes.set_child(m_TxtResContenido);
-    m_ScrollRes.set_size_request(550, 300); // Tamaño un poco más grande
+    m_ScrollRes.set_size_request(550, 300);
     m_ScrollRes.set_policy(Gtk::PolicyType::AUTOMATIC, Gtk::PolicyType::AUTOMATIC);
 
     m_BtnCerrarLista.set_label("Cerrar / Volver");
@@ -558,21 +549,26 @@ VistaEnlaces::VistaEnlaces(Gtk::Notebook& notebook)
 }
 
 void VistaEnlaces::on_volver_clicked() { 
+    m_LblError.set_markup(""); 
     m_notebook.set_current_page(0); 
 }
 
 void VistaEnlaces::on_mostrar_clicked() { 
+    m_LblError.set_markup(""); 
+
+    // Validamos antes de cambiar de vista
     if (peticion.datosCola()) {
-        auto buffer = m_TxtResContenido.get_buffer();
-        buffer->set_text("La cola está vacía. No hay enlaces almacenados.");
-    } else {
-        std::string listado = peticion.obtenerListado(); 
-        auto buffer = m_TxtResContenido.get_buffer();
-        buffer->set_text(listado);
-    }
+        m_LblError.set_markup("<span color='#FF5555' weight='bold'>LA COLA ESTÁ VACÍA. NO HAY ENLACES.</span>");
+        return; // SE QUEDA EN LA VISTA 1
+    } 
+    
+    // Si hay datos, procede normal
+    std::string listado = peticion.obtenerListado(); 
+    auto buffer = m_TxtResContenido.get_buffer();
+    buffer->set_text(listado);
     
     std::cout << "Mostrando vista de enlaces..." << std::endl;
-    m_CenterBox.set_center_widget(m_CardBoxResultados); // Cambio de vista
+    m_CenterBox.set_center_widget(m_CardBoxResultados); // CAMBIO A VISTA 2
 }
 
 void VistaEnlaces::on_cerrar_lista_clicked() {
@@ -616,15 +612,14 @@ Interfaz::Interfaz() {
             /* REDUCIDO: Margen de 10px a 5px para juntarlos más */
             margin: 5px; 
             /* REDUCIDO: Padding de 18px a 10px (hace el botón más flaco) */
-            padding: 10px; 
+            padding: 14px; 
             min-width: 260px; 
             border-radius: 10px; 
             font-weight: 600;
             /* REDUCIDO: Letra de 23px a 18px */
-            font-size: 18px;
+            font-size: 21px;
         }
 
-        /* ... (El resto de estilos de hover y colores se queda igual) ... */
         .menu-card button:hover { 
             background-color: #e30909; 
             color: #222223; 
