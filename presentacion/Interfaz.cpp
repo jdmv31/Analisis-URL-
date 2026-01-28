@@ -139,7 +139,7 @@ void VistaRecopilacion::on_analizar_clicked() {
             if (valorLimite < MIN_PROF) valorLimite = MIN_PROF;
             if (valorLimite > MAX_PROF) valorLimite = MAX_PROF;
 
-            m_LblError.set_markup("<span color='#e6a00f' weight='bold'>NOTA: Profundidad ajustada a " 
+            m_LblError.set_markup("<span color='#FF5555' weight='bold'>NOTA: Profundidad ajustada a " 
                                   + std::to_string(valorLimite) + " (Rango permitido: 1-5).</span>");
             huboAjuste = true;
         }
@@ -151,7 +151,7 @@ void VistaRecopilacion::on_analizar_clicked() {
             if (valorLimite < MIN_PAGS) valorLimite = MIN_PAGS;
             if (valorLimite > MAX_PAGS) valorLimite = MAX_PAGS;
 
-            m_LblError.set_markup("<span color='#e6a00f' weight='bold'>NOTA: Cantidad de páginas ajustada a " 
+            m_LblError.set_markup("<span color='#FF5555' weight='bold'>NOTA: Cantidad de páginas ajustada a " 
                                   + std::to_string(valorLimite) + " (Rango permitido: 25-50).</span>");
             huboAjuste = true;
         }
