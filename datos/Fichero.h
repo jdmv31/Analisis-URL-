@@ -4,6 +4,14 @@
 
 using std::string;
 
+
+struct Metricas{
+    int paginasHuerfanas;
+    int cantImagenes;
+    float promedioLinks;
+    int totalPaginas;
+};
+
 class Fichero{
     private:
         int contadorUrl;
@@ -18,6 +26,8 @@ class Fichero{
         bool guardarContador();
         bool leerPadre();
         bool guardarPadre();
+        bool guardarMetricas(Metricas metricas);
+        bool leerMetricas(Metricas &metricas);
         bool guardarCola(Cola &colaPrioridad);
         bool leerCola(Cola &colaPrioridad);
 };

@@ -20,6 +20,7 @@ class Peticion{
         int paginasHuerfanas;
         float promedioLinks;
         int cantImagenes;
+        int totalEnlaces;
         Cola colaPrioridad;
         Fichero gestorFicheros;
         string rutaEncontrada;
@@ -30,8 +31,9 @@ class Peticion{
         void reset();
         void configurar(bool profundidad, int limite);
         int realizarPeticion(string url);
+        void setLimitePaginas(int dato);
         int getCantIMG();
-        int getPromedioLinks();
+        float getPromedioLinks();
         int getPaginasHuerfanas();
         int getCantNodos();
         void parsearHtml (string html,string urlPadre, int nivel);
@@ -54,6 +56,6 @@ class Peticion{
             cantidad de paginas huerfanas: las que no se puede acceder
             cantidad de nodos: la cantidad de paginas
             cantidad de imagenes: cantidad de imagenes
-            promedio de enlaces en la pagina : cantidad de links / cantidad de paginas
+            promedio de enlaces por pagina : cantidad de links / cantidad de paginas
         */
 };

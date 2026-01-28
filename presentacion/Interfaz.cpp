@@ -4,6 +4,8 @@
 #include <string>
 #include <algorithm>
 #include <cctype>
+#include <iomanip>
+#include <sstream>
 
 using std::string;
 
@@ -179,6 +181,7 @@ void VistaRecopilacion::on_analizar_clicked() {
     } else {
         procesarYMostrar();
     }
+    peticion.calcularMetricas();
 }
 
 void VistaRecopilacion::on_guardar_clicked() {
@@ -352,7 +355,7 @@ void VistaBusqueda::on_buscar_clicked() {
     }
 
     peticion.configurar(true, valorLimite); 
-
+    peticion.setLimitePaginas(100);
     int estado = peticion.realizarPeticion(url);
     if (estado != 200) {
         m_LblError.set_markup("<span color='#FF5555' weight='bold'>ERROR: No se pudo acceder a la URL (Código " + std::to_string(estado) + ").</span>");
@@ -370,6 +373,7 @@ void VistaBusqueda::on_buscar_clicked() {
          buffer->set_text("La palabra no se encontró en los niveles analizados (Profundidad: " + std::to_string(valorLimite) + ").");
     }
     m_CenterBox.set_center_widget(m_CardBoxResultados);
+    peticion.calcularMetricas();
 }
 
 
@@ -445,28 +449,27 @@ VistaAnalisis::VistaAnalisis(Gtk::Notebook& notebook)
 void VistaAnalisis::on_analizar_clicked() { 
     m_LblError.set_markup(""); 
 
-    // Nota: Asumimos que datosCola() devuelve true si la cola ESTÁ VACÍA (basado en tu código de VistaEnlaces)
     if (peticion.datosCola()) {
         m_LblError.set_markup("<span color='#FF5555' weight='bold'>COLA VACIA SIN METRICAS QUE ENSENAR</span>");
         return;
     }
 
-    // Si hay datos, calculamos y mostramos
     std::cout << "Calculando métricas de datos en memoria..." << std::endl; 
     
-    peticion.calcularMetricas();
+    std::stringstream stream;
+    stream << std::fixed << std::setprecision(2) << peticion.getPromedioLinks();
+    std::string promedioFormateado = stream.str();
 
-    // Extraemos los datos usando los getters de Peticion.h
     m_LblHuerfanas.set_markup("<b>Páginas Huérfanas:</b> " + std::to_string(peticion.getPaginasHuerfanas()));
     m_LblImagenes.set_markup("<b>Cantidad de Imágenes:</b> " + std::to_string(peticion.getCantIMG()));
-    m_LblPromedio.set_markup("<b>Promedio de Enlaces:</b> " + std::to_string(peticion.getPromedioLinks()));
+    
+    m_LblPromedio.set_markup("<b>Promedio de Enlaces:</b> " + promedioFormateado);
+    
     m_LblVisitadas.set_markup("<b>Páginas Visitadas:</b> " + std::to_string(peticion.getCantNodos()));
 
-    // Cambiamos a la vista de reporte
     m_CenterBox.set_center_widget(m_CardBoxResultados);
 }
 
-// Asegúrate de modificar también el on_cerrar para no llamar a m_EntryUrl
 void VistaAnalisis::on_cerrar_resultados_clicked() {
     m_CenterBox.set_center_widget(m_CardBox);
 }

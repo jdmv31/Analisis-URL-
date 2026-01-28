@@ -21,14 +21,19 @@ Peticion::Peticion(){
     limitePaginas = 100;
     nivelProfundidad = 3;
     usarProfundidad = false;
+    totalEnlaces = 0;
     // c++ automaticamente usa el constructor del objeto cola, no es necesario especificar
+}
+
+void Peticion::setLimitePaginas(int dato){
+    limitePaginas = dato;
 }
 
 int Peticion::getCantIMG(){
     return cantImagenes;
 }
 
-int Peticion::getPromedioLinks(){
+float Peticion::getPromedioLinks(){
     return promedioLinks;
 }
 
@@ -92,14 +97,29 @@ int Peticion::realizarPeticion(string url) {
         url = "http://" + url;
     }
 
+    int contBarras = 0;
+    for (char c : url) {
+        if (c == '/') contBarras++;
+    }
+
+    if (contBarras == 2) {
+        url += "/";
+    }
+
     auto r = cpr::Get(
         cpr::Url{static_cast<string_view>(url)},
         cpr::Authentication{"user", "pass", cpr::AuthMode::BASIC},
         cpr::Parameters{{"anon", "true"}, {"key", "value"}}
     );
 
-    if (r.status_code == 0) return 0;
-    if (r.status_code >= 400) return r.status_code; 
+    if (r.status_code == 0){
+        paginasHuerfanas++;
+        return 0;
+    }
+    if (r.status_code >= 400){
+        paginasHuerfanas++;
+        return r.status_code; 
+    }
 
     urlSolicitada = url;
     paginasVisitadas.insert(url);
@@ -122,6 +142,10 @@ void Peticion::reset(){
 
 void Peticion::parsearHtml (string html,string urlPadre, int nivel){
     GumboOutput* salida = gumbo_parse(html.c_str());
+    cantImagenes += contarImagenes(salida->root);
+    totalEnlaces += contarLinks(salida->root);
+
+
     vector<string> urlsRecolectadas;
     extraerEtiquetas(salida->root,urlsRecolectadas);
     procesarLinks(urlsRecolectadas,urlPadre,nivel);
@@ -209,6 +233,16 @@ void Peticion::guardarInformacion(){
     gestorFicheros.setContador(elementos);
     if (gestorFicheros.guardarPadre() && gestorFicheros.guardarContador() && gestorFicheros.guardarCola(colaPrioridad))
         std::cout<<"bien"<<endl;
+
+    Metricas metricas;
+    metricas.paginasHuerfanas = this->paginasHuerfanas;
+    metricas.cantImagenes = this->cantImagenes;
+    metricas.promedioLinks = this->promedioLinks;
+    metricas.totalPaginas = colaPrioridad.getLongitud();
+
+    if (gestorFicheros.guardarMetricas(metricas)) {
+        std::cout << "metricas guardadas correctamente" << endl;
+    }
 }   
 
 void Peticion::configurar(bool profundidad, int limite){
@@ -221,6 +255,16 @@ void Peticion::configurar(bool profundidad, int limite){
 
 void Peticion::leerInformacion(){
     gestorFicheros.leerCola(colaPrioridad);
+    Metricas metricas;
+    metricas.paginasHuerfanas = 0;
+    metricas.cantImagenes = 0;
+    metricas.promedioLinks = 0;
+    metricas.totalPaginas = 0;
+    if (gestorFicheros.leerMetricas(metricas)) {
+        this->paginasHuerfanas = metricas.paginasHuerfanas;
+        this->cantImagenes = metricas.cantImagenes;
+        this->promedioLinks = metricas.promedioLinks;
+    }
 }
 
 string Peticion::obtenerPadre(string urlHija){
@@ -314,32 +358,8 @@ int Peticion::contarLinks(GumboNode* nodo){
 
 
 void Peticion::calcularMetricas(){
-    cantImagenes = 0;
-    paginasHuerfanas = 0;
-    int totalLinks = 0;
-    promedioLinks = 0;
-    colaPrioridad.recorrerCola([&](string url, int prioridad, string padre, int nivel) -> bool {
-        cpr::Response r = cpr::Get(cpr::Url{url});
-
-        if (r.status_code == 404 || r.status_code == 403 || r.status_code == 0)
-            paginasHuerfanas++;
-        
-        if (r.status_code == 200){
-            GumboOutput* salida = gumbo_parse(r.text.c_str());  
-            cantImagenes += contarImagenes(salida->root);
-            totalLinks += contarLinks(salida->root);
-            gumbo_destroy_output(&kGumboDefaultOptions, salida);
-        }
-        return false;
-    });
-
-    promedioLinks = (float) totalLinks / (colaPrioridad.getLongitud());
-
-    std::cout << "\n--- Reporte de Metricas ---" << std::endl;
-    std::cout << "Paginas Huerfanas: " << paginasHuerfanas << std::endl;
-    std::cout << "Cantidad de Imagenes: " << cantImagenes << std::endl;
-    std::cout << "Promedio de Enlaces: " << promedioLinks << std::endl;
-    std::cout << "Cantidad de paginas visitadas: "<<colaPrioridad.getLongitud()<<std::endl;
+    promedioLinks = (colaPrioridad.getLongitud() > 0) 
+                    ? (float)totalEnlaces / colaPrioridad.getLongitud() : 0;
 }
 
 //agregado por nicole

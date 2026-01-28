@@ -171,3 +171,46 @@ bool Fichero::leerCola(Cola &colaPrioridad){
     }
     return true;
 }
+
+bool Fichero::guardarMetricas(Metricas metricas){
+fs::path rutaBase(RUTA_DATOS);
+    fs::path carpeta = rutaBase / "contadorUrl";
+    
+    if (!fs::exists(carpeta))
+        fs::create_directories(carpeta);
+
+    fs::path rutaArchivo = carpeta / "metricasGuardadas.txt";
+    std::ofstream archivo(rutaArchivo);
+
+    if (archivo.is_open()) {
+        archivo << metricas.paginasHuerfanas << "\n";
+        archivo << metricas.cantImagenes << "\n";
+        archivo << metricas.promedioLinks << "\n";
+        archivo << metricas.totalPaginas << "\n";
+        
+        archivo.close();
+        return true;
+    }
+        
+    return false; 
+}
+
+bool Fichero::leerMetricas(Metricas &metricas) {
+    fs::path rutaBase(RUTA_DATOS);
+    fs::path carpeta = rutaBase / "contadorUrl";
+    fs::path rutaArchivo = carpeta / "metricasGuardadas.txt";
+
+    if (!fs::exists(rutaArchivo)) return false;
+
+    std::ifstream archivo(rutaArchivo);
+    if (archivo.is_open()) {
+        archivo >> metricas.paginasHuerfanas;
+        archivo >> metricas.cantImagenes;
+        archivo >> metricas.promedioLinks;
+        archivo >> metricas.totalPaginas;
+        
+        archivo.close();
+        return true;
+    }
+        return false;
+}
