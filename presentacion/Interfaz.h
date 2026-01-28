@@ -56,8 +56,6 @@ protected:
     Gtk::Label m_LblTitulo, m_LblInstruccion, m_LblUrl, m_LblError;
     Gtk::Entry m_EntryKeyword, m_EntryUrl;
     Gtk::Entry m_EntryLimite; // De tu compañero
-
-    Gtk::CheckButton m_RadioProfundidad, m_RadioPaginas; // De tu compañero
     Gtk::Button m_BtnBuscar, m_BtnVolver;
 
     Gtk::Box m_CardBoxResultados;

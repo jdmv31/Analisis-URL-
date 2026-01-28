@@ -4,6 +4,7 @@
 #include <negocios/Cola.h>
 #include <datos/Fichero.h>
 #include <vector>
+#include <sstream>
 
 using std::vector;
 using namespace std;
@@ -19,6 +20,7 @@ class Peticion{
         int cantImagenes;
         Cola colaPrioridad;
         Fichero gestorFicheros;
+        string rutaEncontrada;
     public:
         Peticion();
         string obtenerListado();
@@ -40,6 +42,8 @@ class Peticion{
         int contarLinks(GumboNode* nodo);
         bool datosCola();
         string obtenerPadre(string urlHija);
+        string obtenerRuta();
+        string extraerDominio(string url);
         /*
             metricas estructurales: 
             cantidad de paginas huerfanas: las que no se puede acceder

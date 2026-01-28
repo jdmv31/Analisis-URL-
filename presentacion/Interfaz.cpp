@@ -113,45 +113,87 @@ void VistaRecopilacion::on_volver_clicked() {
 
 void VistaRecopilacion::on_analizar_clicked() {
     string url = m_EntryUrl.get_text();
-    string textoLimite = m_EntryLimite.get_text(); // Codigo compañero
+    string textoLimite = m_EntryLimite.get_text();
     m_LblError.set_markup(""); 
 
-    // 1. Tu validación (Prioritaria)
     if (url.empty()) {
         m_LblError.set_markup("<span color='#FF5555' weight='bold'>ADVERTENCIA: Debe ingresar una URL.</span>");
         return;
     }
 
-    // 2. Lógica de configuración de él
     int valorLimite = 0;
     try {
         valorLimite = std::stoi(textoLimite);
     } catch (...) {
-        valorLimite = 25; // Default seguro
+        valorLimite = 25;
     }
 
     bool esProfundidad = m_RadioProfundidad.get_active();
+    bool huboAjuste = false;
+
+    if (esProfundidad) {
+        const int MIN_PROF = 1;
+        const int MAX_PROF = 5;
+
+        if (valorLimite < MIN_PROF || valorLimite > MAX_PROF) {
+            if (valorLimite < MIN_PROF) valorLimite = MIN_PROF;
+            if (valorLimite > MAX_PROF) valorLimite = MAX_PROF;
+
+            m_LblError.set_markup("<span color='#e6a00f' weight='bold'>NOTA: Profundidad ajustada a " 
+                                  + std::to_string(valorLimite) + " (Rango permitido: 1-5).</span>");
+            huboAjuste = true;
+        }
+    } else {
+        const int MIN_PAGS = 25;
+        const int MAX_PAGS = 50;
+
+        if (valorLimite < MIN_PAGS || valorLimite > MAX_PAGS) {
+            if (valorLimite < MIN_PAGS) valorLimite = MIN_PAGS;
+            if (valorLimite > MAX_PAGS) valorLimite = MAX_PAGS;
+
+            m_LblError.set_markup("<span color='#e6a00f' weight='bold'>NOTA: Cantidad de páginas ajustada a " 
+                                  + std::to_string(valorLimite) + " (Rango permitido: 25-50).</span>");
+            huboAjuste = true;
+        }
+    }
     peticion.configurar(esProfundidad, valorLimite);
 
-    // 3. Ejecución y Visualización (Tu lógica UI)
-    int estado = peticion.realizarPeticion(url);
-    if (estado == 200) {
-        m_LblResUrl.set_markup("<b>URL Analizada:</b> " + url);
-        auto buffer = m_TxtInfoContenido.get_buffer();
-        buffer->set_text("Conexión exitosa (200 OK).\nContenido descargado en memoria.\nListo para guardar en cola.");
-        m_CenterBox.set_center_widget(m_CardBoxResultados);
+    auto procesarYMostrar = [this, url]() {
+        m_LblError.set_markup(""); 
+
+        int estado = peticion.realizarPeticion(url);
+        if (estado == 200) {
+            m_LblResUrl.set_markup("<b>URL Analizada:</b> " + url);
+            
+            auto buffer = m_TxtInfoContenido.get_buffer();
+            buffer->set_text("Análisis completado exitosamente.\nDatos listos para guardar.");
+            
+            m_CenterBox.set_center_widget(m_CardBoxResultados);
+        } else {
+            m_LblError.set_markup("<span color='#FF5555' weight='bold'>ERROR DE CONEXIÓN: Código " + std::to_string(estado) + ".\nVerifique la URL o su conexión a internet.</span>");
+        }
+    };
+
+    if (huboAjuste) {
+        Glib::signal_timeout().connect_once(procesarYMostrar, 2000);
     } else {
-        m_LblError.set_markup("<span color='#FF5555' weight='bold'>ERROR DE CONEXIÓN: Código " + std::to_string(estado) + ".\nVerifique la URL o su conexión a internet.</span>");
+        procesarYMostrar();
     }
 }
 
 void VistaRecopilacion::on_guardar_clicked() {
     peticion.guardarInformacion();
-    std::cout << "Guardado en cola de prioridad." << std::endl;
-    m_EntryUrl.set_text("");
-    m_CenterBox.set_center_widget(m_CardBox);
-    m_notebook.set_current_page(0);
+    auto buffer = m_TxtInfoContenido.get_buffer();
+    buffer->set_text("Datos almacenados correctamente en memoria.");
+
+    Glib::signal_timeout().connect_once([this]() {        
+        m_EntryUrl.set_text("");
+        m_CenterBox.set_center_widget(m_CardBox);
+        m_notebook.set_current_page(0);
+
+    }, 1500);
 }
+
 void VistaRecopilacion::on_cancelar_resultados_clicked() {
     m_CenterBox.set_center_widget(m_CardBox);
 }
@@ -191,18 +233,11 @@ VistaBusqueda::VistaBusqueda(Gtk::Notebook& notebook)
     m_LblError.set_wrap(true);
 
     // Controles de Límite (Codigo de él)
-    m_EntryLimite.set_placeholder_text("Límite (ej: 3)");
-    m_EntryLimite.add_css_class("entry-url");
-
-    m_RadioProfundidad.set_label("Límite por Profundidad");
-    m_RadioPaginas.set_label("Límite por Máx. Páginas");
-    m_RadioPaginas.set_group(m_RadioProfundidad); 
-    m_RadioProfundidad.set_active(true);          
+    m_EntryLimite.set_placeholder_text("Límite profundidad: (1 - 5)");
+    m_EntryLimite.add_css_class("entry-url");  
 
     m_RadioBox.set_orientation(Gtk::Orientation::VERTICAL);
-    m_RadioBox.set_spacing(5);                              
-    m_RadioBox.append(m_RadioProfundidad);                  
-    m_RadioBox.append(m_RadioPaginas);
+    m_RadioBox.set_spacing(5);                                    
 
     m_BtnBuscar.set_label("Buscar");
     m_BtnVolver.set_label("Volver al Menú");
@@ -279,47 +314,61 @@ void VistaBusqueda::on_nueva_busqueda_clicked() {
 void VistaBusqueda::on_buscar_clicked() {
     string palabra = m_EntryKeyword.get_text();
     string url = m_EntryUrl.get_text();
-    string textoLimite = m_EntryLimite.get_text(); // Codigo de él
+    string textoLimite = m_EntryLimite.get_text();
     m_LblError.set_markup(""); 
 
-    // 1. Tus validaciones de seguridad (IMPORTANTE MANTENERLAS)
     if (palabra.empty() || url.empty()) {
         m_LblError.set_markup("<span color='#FF5555' weight='bold'>ADVERTENCIA: Todos los campos son obligatorios.</span>");
         return;
     }
     if (!validar_texto(palabra)) {
-        m_LblError.set_markup("<span color='#FF5555' weight='bold'>ADVERTENCIA: La palabra clave solo debe contener letras (A-Z).</span>");
+        m_LblError.set_markup("<span color='#FF5555' weight='bold'>ADVERTENCIA: La palabra clave solo debe contener letras.</span>");
         return;
     }
 
-    // 2. Lógica de configuración de él
     int valorLimite = 0;
     try {
-        valorLimite = std::stoi(textoLimite);
+        if (!textoLimite.empty()) valorLimite = std::stoi(textoLimite);
     } catch (...) {
-        valorLimite = 3; // Default
+        valorLimite = 1;
     }
-    bool porProfundidad = m_RadioProfundidad.get_active();
-    peticion.configurar(porProfundidad, valorLimite);
 
-    // 3. Ejecución
+    const int MIN_PROF_SEGURIDAD = 1;
+    const int MAX_PROF_SEGURIDAD = 5;
+    
+
+    if (valorLimite < MIN_PROF_SEGURIDAD || valorLimite > MAX_PROF_SEGURIDAD) {
+
+        if (valorLimite < MIN_PROF_SEGURIDAD) {
+            valorLimite = MIN_PROF_SEGURIDAD;
+        } else {
+            valorLimite = MAX_PROF_SEGURIDAD;
+        }
+
+        m_LblError.set_markup("<span color='#e6a00f' weight='bold'>NOTA: La profundidad debe estar entre " 
+                              + std::to_string(MIN_PROF_SEGURIDAD) + " y " 
+                              + std::to_string(MAX_PROF_SEGURIDAD) + ". Se ajustó a " 
+                              + std::to_string(valorLimite) + ".</span>");
+    }
+
+    peticion.configurar(true, valorLimite); 
+
     int estado = peticion.realizarPeticion(url);
     if (estado != 200) {
-        m_LblError.set_markup("<span color='#FF5555' weight='bold'>ADVERTENCIA: URL inválida o error de conexión (Código " + std::to_string(estado) + ").</span>");
+        m_LblError.set_markup("<span color='#FF5555' weight='bold'>ERROR: No se pudo acceder a la URL (Código " + std::to_string(estado) + ").</span>");
         return;
     }
 
-    // 4. Búsqueda y Resultados en TU interfaz
     bool encontrada = peticion.buscarPalabra(palabra);
+
     m_LblResDato.set_markup("<b>Búsqueda:</b> " + palabra + "\n<b>En:</b> " + url);
-    
     auto buffer = m_TxtResContenido.get_buffer();
-    if (encontrada) {
-         buffer->set_text("¡Palabra encontrada!\nSe ha impreso la ruta de navegación en la consola.\nRevise la terminal para ver el camino exacto.");
-    } else {
-         buffer->set_text("La palabra NO se encontró dentro de los límites especificados.");
-    }
     
+    if (encontrada) {
+         buffer->set_text(peticion.obtenerRuta());
+    } else {
+         buffer->set_text("La palabra no se encontró en los niveles analizados (Profundidad: " + std::to_string(valorLimite) + ").");
+    }
     m_CenterBox.set_center_widget(m_CardBoxResultados);
 }
 
@@ -513,12 +562,10 @@ void VistaEnlaces::on_volver_clicked() {
 }
 
 void VistaEnlaces::on_mostrar_clicked() { 
-    // Verificar si hay datos
     if (peticion.datosCola()) {
         auto buffer = m_TxtResContenido.get_buffer();
         buffer->set_text("La cola está vacía. No hay enlaces almacenados.");
     } else {
-        // Obtenemos el listado formateado desde la lógica de negocio
         std::string listado = peticion.obtenerListado(); 
         auto buffer = m_TxtResContenido.get_buffer();
         buffer->set_text(listado);
@@ -538,7 +585,7 @@ void VistaEnlaces::on_cerrar_lista_clicked() {
 // =========================================================
 Interfaz::Interfaz() {
     set_title("Web Crawler");
-    set_default_size(900, 900);
+    set_default_size(800, 550);
 
     const std::string ESTILO_CSS = R"(
         window, notebook, stack { 
@@ -548,28 +595,36 @@ Interfaz::Interfaz() {
         .menu-card { 
             background-color: #BCB4FF; 
             border-radius: 15px; 
-            padding: 80px; 
+            /* REDUCIDO: De 40px a 25px */
+            padding: 25px; 
             min-width: 500px; 
-            min-height: 450px;
+            /* REDUCIDO: Altura mínima menor */
+            min-height: 300px;
             box-shadow: 0px 4px 15px rgba(0,0,0,0.5); 
         }
 
         .titulo-label {
             color: #222223;
-            font-size: 45px;
+            /* REDUCIDO: De 45px a 35px */
+            font-size: 35px;
             font-weight: bold;
-            margin-bottom: 25px;
+            /* REDUCIDO: De 25px a 15px */
+            margin-bottom: 15px;
         }
 
         .menu-card button { 
-            margin: 10px; 
-            padding: 18px; 
+            /* REDUCIDO: Margen de 10px a 5px para juntarlos más */
+            margin: 5px; 
+            /* REDUCIDO: Padding de 18px a 10px (hace el botón más flaco) */
+            padding: 10px; 
             min-width: 260px; 
             border-radius: 10px; 
             font-weight: 600;
-            font-size: 23px;
+            /* REDUCIDO: Letra de 23px a 18px */
+            font-size: 18px;
         }
 
+        /* ... (El resto de estilos de hover y colores se queda igual) ... */
         .menu-card button:hover { 
             background-color: #e30909; 
             color: #222223; 
@@ -637,7 +692,7 @@ Interfaz::Interfaz() {
     m_MenuContainer.add_css_class("menu-card");
     m_MenuContainer.set_orientation(Gtk::Orientation::VERTICAL);
     m_MenuContainer.set_spacing(10);
-    m_MenuContainer.set_margin(50);
+    m_MenuContainer.set_margin(30);
     m_MenuContainer.set_valign(Gtk::Align::CENTER);
     m_MenuContainer.set_halign(Gtk::Align::CENTER);
 
@@ -678,8 +733,11 @@ Interfaz::Interfaz() {
 
     set_child(m_Notebook);
     peticion.leerInformacion();
+
+    /*
     if (!peticion.datosCola())
         peticion.calcularMetricas();
+    */    
 }
 
 void Interfaz::on_salir_clicked() { 

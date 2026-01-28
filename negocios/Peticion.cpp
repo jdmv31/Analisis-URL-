@@ -6,6 +6,7 @@
 #include <iostream>
 #include <vector>
 #include <future>
+#include <sstream>
 
 using std::string;
 using std::endl;
@@ -17,7 +18,7 @@ Peticion::Peticion(){
     paginasHuerfanas = 0;
     promedioLinks = 0;
     cantImagenes = 0;
-    limitePaginas = 25;
+    limitePaginas = 15;
     nivelProfundidad = 3;
     usarProfundidad = false;
     // c++ automaticamente usa el constructor del objeto cola, no es necesario especificar
@@ -35,6 +36,26 @@ int Peticion::getPaginasHuerfanas(){
     return paginasHuerfanas;
 }
 
+string Peticion::extraerDominio(string url) {
+    string dominio = url;
+
+    size_t inicio = dominio.find("://");
+    if (inicio != string::npos) {
+        dominio = dominio.substr(inicio + 3);
+    }
+
+    if (dominio.find("www.") == 0) {
+        dominio = dominio.substr(4);
+    }
+
+    size_t fin = dominio.find("/");
+    if (fin != string::npos) {
+        dominio = dominio.substr(0, fin);
+    }
+
+    return dominio;
+}
+
 int Peticion::getCantNodos(){
     return colaPrioridad.getLongitud();
 }
@@ -42,6 +63,9 @@ int Peticion::getCantNodos(){
 
 int Peticion::realizarPeticion(string url) {
     reset();
+    if (url.find("http") != 0) {
+        url = "http://" + url;
+    }
     colaPrioridad.insertarUrl(url,url.length(),"Inicio",0);
     auto r = cpr::Get(
         cpr::Url{static_cast<string_view>(url)},
@@ -99,7 +123,6 @@ void Peticion::procesarLinks(vector<string> urlsRecolectadas, string urlPadre, i
 }
 
 void Peticion::extraerEtiquetas(GumboNode* nodo, vector<string>& urlsRecolectadas){
-
     if (!usarProfundidad) {
         int totalActual = colaPrioridad.getLongitud() + urlsRecolectadas.size();
         if (totalActual >= limitePaginas) return;
@@ -109,12 +132,25 @@ void Peticion::extraerEtiquetas(GumboNode* nodo, vector<string>& urlsRecolectada
 
     GumboAttribute* href;
     if (nodo->v.element.tag == GUMBO_TAG_A && (href = gumbo_get_attribute(&nodo->v.element.attributes,"href"))){
-        if (!usarProfundidad)
-             if (colaPrioridad.getLongitud() + urlsRecolectadas.size() >= limitePaginas) return;
+        
+        if (colaPrioridad.getLongitud() + urlsRecolectadas.size() < limitePaginas) {
+             string urlEncontrada = static_cast<string>(href->value);
+             
 
-        string url = static_cast<string>(href->value);
-        if (url.find("http") == 0)
-             urlsRecolectadas.push_back(url);
+             if (urlEncontrada.find("/") == 0) {
+                 string dominioBase = extraerDominio(urlSolicitada);
+                 urlEncontrada = "http://" + dominioBase + urlEncontrada;
+             }
+
+             if (urlEncontrada.find("http") == 0) {
+                 string dominioPadre = extraerDominio(urlSolicitada);
+                 string dominioHijo = extraerDominio(urlEncontrada);
+
+                 if (dominioPadre == dominioHijo) {
+                     urlsRecolectadas.push_back(urlEncontrada);
+                 }
+             }
+        }
     }
 
     GumboVector* hijos = &nodo->v.element.children;
@@ -159,16 +195,18 @@ string Peticion::obtenerPadre(string urlHija){
     return urlPadre;
 }
 
-
 bool Peticion::buscarPalabra(string palabraClave){
     bool algunEncontrado = false;
+    rutaEncontrada = "";
 
     colaPrioridad.recorrerCola([&](string url, int prioridad, string padre, int nivel) -> bool {
         
         if (url.find(palabraClave) != std::string::npos) {
-            std::cout << "\n=== ¡COINCIDENCIA ENCONTRADA! ===" << std::endl;
-            std::cout << "URL: " << url << std::endl;
-            std::cout << "Nivel de profundidad: " << nivel << std::endl;
+            std::stringstream ss;
+            
+            ss << "=== URL ENCONTRADA ===\n";
+            ss << "URL: " << url << "\n";
+            ss << "Nivel de profundidad: " << nivel << "\n\n";
             vector<string> camino;
             camino.push_back(url);
             string padreActual = padre;
@@ -186,20 +224,19 @@ bool Peticion::buscarPalabra(string palabraClave){
                 });
                 padreActual = abuelo; 
             }
-
-            std::cout << "\n--- Ruta de Clicks ---" << std::endl;
-            std::cout << "Pasos necesarios: " << camino.size() << std::endl;
+            ss << "--- Ruta de Navegación (Clicks) ---\n";
+            ss << "Pasos necesarios: " << camino.size() << "\n\n";
             
             for (int i = camino.size() - 1; i >= 0; i--) {
-                std::cout << "[" << (camino.size() - 1 - i) << "] " << camino[i] << std::endl;
-                if (i > 0) std::cout << "  |\n  V" << std::endl;
+                ss << "[" << (camino.size() - 1 - i) << "] " << camino[i] << "\n";
+                if (i > 0) ss << "  |\n  V\n";
             }
-            std::cout << "===============================\n" << std::endl;
+            ss << "===============================\n";
+            rutaEncontrada = ss.str();
             
             algunEncontrado = true;
             return true;
         }
-        
         return false; 
     });
 
@@ -270,7 +307,7 @@ string Peticion::obtenerListado() {
     int contador = 1;
     
     colaPrioridad.recorrerCola([&](string url, int prioridad, string padre, int nivel) -> bool {
-        resultado += to_string(contador) + ". [Prio: " + to_string(prioridad) + "] " + url + "\n";
+        resultado += to_string(contador) + ". " + url + "\n";
         contador++;
         return false; // Retornar false para seguir recorriendo
     });
@@ -281,4 +318,8 @@ string Peticion::obtenerListado() {
 
 bool Peticion::datosCola(){
     return colaPrioridad.colaVacia();
+}
+
+string Peticion::obtenerRuta() {
+    return rutaEncontrada;
 }
