@@ -18,7 +18,7 @@ Peticion::Peticion(){
     paginasHuerfanas = 0;
     promedioLinks = 0;
     cantImagenes = 0;
-    limitePaginas = 15;
+    limitePaginas = 25;
     nivelProfundidad = 3;
     usarProfundidad = false;
     // c++ automaticamente usa el constructor del objeto cola, no es necesario especificar
@@ -123,6 +123,7 @@ void Peticion::procesarLinks(vector<string> urlsRecolectadas, string urlPadre, i
 }
 
 void Peticion::extraerEtiquetas(GumboNode* nodo, vector<string>& urlsRecolectadas){
+    // Bloque 1: Validación inicial (ESTE ESTABA BIEN)
     if (!usarProfundidad) {
         int totalActual = colaPrioridad.getLongitud() + urlsRecolectadas.size();
         if (totalActual >= limitePaginas) return;
@@ -131,12 +132,9 @@ void Peticion::extraerEtiquetas(GumboNode* nodo, vector<string>& urlsRecolectada
     if (nodo->type != GUMBO_NODE_ELEMENT) return;
 
     GumboAttribute* href;
-    if (nodo->v.element.tag == GUMBO_TAG_A && (href = gumbo_get_attribute(&nodo->v.element.attributes,"href"))){
-        
-        if (colaPrioridad.getLongitud() + urlsRecolectadas.size() < limitePaginas) {
+    if (nodo->v.element.tag == GUMBO_TAG_A && (href = gumbo_get_attribute(&nodo->v.element.attributes,"href"))){       
+        if (usarProfundidad || (colaPrioridad.getLongitud() + urlsRecolectadas.size() < limitePaginas)) { // <--- CAMBIO CLAVE
              string urlEncontrada = static_cast<string>(href->value);
-             
-
              if (urlEncontrada.find("/") == 0) {
                  string dominioBase = extraerDominio(urlSolicitada);
                  urlEncontrada = "http://" + dominioBase + urlEncontrada;
@@ -155,6 +153,7 @@ void Peticion::extraerEtiquetas(GumboNode* nodo, vector<string>& urlsRecolectada
 
     GumboVector* hijos = &nodo->v.element.children;
     for (int i = 0; i < hijos->length; i++){
+        // Bloque 3: Validación recursiva (ESTE ESTABA BIEN)
         if (!usarProfundidad && (colaPrioridad.getLongitud() + urlsRecolectadas.size() >= limitePaginas)) 
             break;
             
